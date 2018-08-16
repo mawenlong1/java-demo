@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * @author mawenlong
  * @date 2018/08/15
- * describe:
+ * describe:列表转化
  */
 public class Demo01 {
     final List<String> friends =
@@ -37,7 +37,6 @@ public class Demo01 {
         friends.stream()
                 .map(String::toUpperCase)
                 .forEach(name -> System.out.println(name));
-
     }
 
     public static void main(String[] args) {
