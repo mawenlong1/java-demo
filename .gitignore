@@ -12,3 +12,5 @@ target
 *.log
 *.log.*
 /pinyougou-dao/pinyougou-dao.iml___jb_tmp___
+/springboot/mvnw.cmd
+/springboot/mvnw
