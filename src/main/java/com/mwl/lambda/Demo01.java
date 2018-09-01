@@ -50,7 +50,9 @@ public class Demo01 {
     }
 
     public static void main(String[] args) {
-        new Demo01().totalOfDiscountedPrices();
-        new Demo01().totalOfDiscountedPrices1();
+        //new Demo01().totalOfDiscountedPrices();
+        //new Demo01().totalOfDiscountedPrices1();
+        int i=0,j=0;
+        System.out.println("i++:"+(i++)+"\n++j:"+(++j));
     }
 }
