@@ -2,6 +2,7 @@ package com.mwl.lamada;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -22,6 +23,8 @@ public class Test {
         };
         workerInterface.doSomeWork();
         workerInterface.testDefault();
+        Function<Integer, Integer> function = val->val+10;
+        System.out.println(function.apply(777));
     }
 
     public static void execute(WorkerInterface worker) {
