@@ -6,9 +6,10 @@ import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.HttpServletBean;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * @author mawenlong
@@ -25,10 +26,17 @@ public class GoController implements EnvironmentAware {
         return "index.jsp";
     }
 
+    @ModelAttribute
+    public void setModel(Model model) {
+        model.addAttribute("add", "model");
+    }
+
     //处理GET类型的“/index”和“/”请求
-    @RequestMapping(value = { "/index"}, method = { RequestMethod.GET })
+    @RequestMapping(value = { "/index", "/" }, method = { RequestMethod.GET })
+    @ResponseBody
     public String index(Model model) {
         logger.info("=========processed by index==============");
+        logger.info(model.asMap().get("add"));
         model.addAttribute("msg", "Go Go Go!!!");
         return "index.jsp";
     }
