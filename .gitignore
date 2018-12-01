@@ -14,3 +14,6 @@ target
 /pinyougou-dao/pinyougou-dao.iml___jb_tmp___
 /springboot/mvnw.cmd
 /springboot/mvnw
+/spring-boot-docker/.gitignore
+/spring-boot-docker/mvnw.cmd
+/spring-boot-docker/mvnw
