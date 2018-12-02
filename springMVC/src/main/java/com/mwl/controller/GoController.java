@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @date 2018/11/28
  */
 @Controller
+@RequestMapping("/go")
 public class GoController implements EnvironmentAware {
     private final Log logger = LogFactory.getLog(GoController.class);
 
@@ -32,7 +33,7 @@ public class GoController implements EnvironmentAware {
     }
 
     //处理GET类型的“/index”和“/”请求
-    @RequestMapping(value = { "/index", "/" }, method = { RequestMethod.GET })
+    @RequestMapping(value = { "/index" }, method = { RequestMethod.GET })
     @ResponseBody
     public String index(Model model) {
         logger.info("=========processed by index==============");

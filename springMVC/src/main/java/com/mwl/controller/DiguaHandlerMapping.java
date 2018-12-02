@@ -11,16 +11,16 @@ import java.util.Calendar;
  * @date 2018/11/28
  */
 public class DiguaHandlerMapping implements HandlerMapping {
-    @Override
+
     public HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
         String url = request.getRequestURI();
         String method = request.getMethod();
-        if(url.startsWith("/tudou")){
-            if(method.equalsIgnoreCase("GET")){
+        if (url.startsWith("/tudou")) {
+            if (method.equalsIgnoreCase("GET")) {
 
-            }else if(method.equalsIgnoreCase("POST")){
+            } else if (method.equalsIgnoreCase("POST")) {
 
-            }else{
+            } else {
 
             }
         }

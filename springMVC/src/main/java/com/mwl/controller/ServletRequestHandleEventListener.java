@@ -14,7 +14,6 @@ import org.springframework.web.context.support.ServletRequestHandledEvent;
 public class ServletRequestHandleEventListener implements ApplicationListener<ServletRequestHandledEvent> {
     private final Log logger = LogFactory.getLog(ServletRequestHandleEventListener.class);
 
-    @Override
     public void onApplicationEvent(ServletRequestHandledEvent event) {
         logger.info(event.getDescription());
     }
