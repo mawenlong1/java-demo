@@ -7,7 +7,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
@@ -43,5 +45,12 @@ public class BookController {
         logger.info("book:" + modelMap.get("book") + "\t des:" + modelMap.get("description") + "\t price:" +
                     modelMap.get("price"));
         return "index";
+    }
+
+    //取出uri模板中的变量作为参数
+    @RequestMapping(value = "/product/{productId}", method = RequestMethod.GET)
+    public String getProduct(@PathVariable("productId") String productId) {
+        System.out.println("Product Id : " + productId);
+        return "hello";
     }
 }
