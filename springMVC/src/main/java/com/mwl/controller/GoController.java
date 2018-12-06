@@ -27,6 +27,7 @@ public class GoController implements EnvironmentAware {
         return "index.jsp";
     }
 
+    //该Controller的所有方法在调用前，先执行此@ModelAttribute方法， @SessionAttributes即将值放到session作用域中，写在class上面。
     @ModelAttribute
     public void setModel(Model model) {
         model.addAttribute("add", "model");

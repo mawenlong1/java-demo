@@ -1,9 +1,7 @@
 # From java image, version : 8
 FROM java:8
-
 # 挂载app目录
 VOLUME /app
-
 # COPY or ADD to image
 COPY spring-boot-docker.jar app.jar
 

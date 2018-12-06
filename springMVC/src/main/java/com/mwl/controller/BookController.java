@@ -7,10 +7,14 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.MatrixVariable;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
@@ -48,6 +52,28 @@ public class BookController {
         logger.info("book:" + modelMap.get("book") + "\t des:" + modelMap.get("description") + "\t price:" +
                     modelMap.get("price"));
         return "index";
+    }
+
+    //取出uri模板中的变量作为参数
+    @RequestMapping(value = "/product/{productId}", method = RequestMethod.GET)
+    public String getProduct(@PathVariable("productId") String productId) {
+        System.out.println("Product Id : " + productId);
+        return "hello";
+    }
+
+    @GetMapping("/{name:[a-z-]+}-{version:\\d\\.\\d\\.\\d}{ext:\\.[a-z]+}")
+    public void handle(@PathVariable String version, @PathVariable String ext) {
+        // ...
+    }
+    @GetMapping(path = "/pets/{petId}", params = "myParam=myValue")
+    public void findPet(@PathVariable String petId) {
+        // ...
+    }
+    @GetMapping("/demo")
+    public void handle(
+            @RequestHeader("Accept-Encoding") String encoding,
+            @RequestHeader("Keep-Alive") long keepAlive) {
+        //...
     }
 
     @RequestMapping("/{bookId}")
