@@ -3,15 +3,20 @@ package com.mwl.controller;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.MatrixVariable;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
@@ -69,5 +74,24 @@ public class BookController {
             @RequestHeader("Accept-Encoding") String encoding,
             @RequestHeader("Keep-Alive") long keepAlive) {
         //...
+    }
+
+    @RequestMapping("/{bookId}")
+    @ResponseBody
+    public String getBookId(@PathVariable("bookId") String bookId) {
+        String msg = "bookId:" + bookId;
+        logger.info("============getBySessionAttributes()=======================");
+        logger.info("bookId:" + bookId);
+        return msg;
+    }
+
+    @RequestMapping(value = "/tel/{name}", method = RequestMethod.GET)
+    @ResponseBody
+    public String getTel(@PathVariable("name") String name, @MatrixVariable(required = false) String gender,
+                         @MatrixVariable(required = false) String group) {
+        String msg = "bookId:" + name + "\ngender:" + gender + "\ngroup" + group;
+        logger.info("============getBySessionAttributes()=======================");
+        logger.info("bookId:" + name);
+        return msg;
     }
 }
