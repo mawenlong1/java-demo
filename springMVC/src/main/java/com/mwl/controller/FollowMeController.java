@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.UnsupportedEncodingException;
+
 /**
  * @author mawenlong
  * @date 2018/12/07
@@ -23,7 +25,10 @@ public class FollowMeController {
     private String[] sensitiveWords = new String[] { "k1", "k2" };
 
     @ModelAttribute("comment")
-    public String replaceSensitiveWords(String comment) {
+    public String replaceSensitiveWords(String comment) throws UnsupportedEncodingException {
+        // 解决get请求参数乱码
+        comment = new String(comment.getBytes("ISO-8859-1"), "UTF-8");
+        logger.info("编码后comment：" + comment);
         if (comment != null) {
             logger.info("原始comment：" + comment);
             for (String sw : sensitiveWords) {
@@ -36,12 +41,14 @@ public class FollowMeController {
 
     @RequestMapping(value = "/articles/{articleId}/comment")
     public String doComment(@PathVariable String articleId, RedirectAttributes attributes, Model model) {
+
         attributes.addFlashAttribute("comment", model.asMap().get("comment"));
         model.addAttribute("articleId", articleId);
 //        保存到数据库
         return "redirect:/showArticle";
     }
-    @RequestMapping(value = "/showArticle",method = RequestMethod.GET)
+
+    @RequestMapping(value = "/showArticle", method = RequestMethod.GET)
     public String showArticle(Model model, SessionStatus sessionStatus) {
         String articleId = (String) model.asMap().get("articleId");
         model.addAttribute("articleTitle", articleId + "号标题");
