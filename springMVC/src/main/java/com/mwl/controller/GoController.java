@@ -39,6 +39,7 @@ public class GoController implements EnvironmentAware {
     public String index(Model model) {
         logger.info("=========processed by index==============");
         logger.info(model.asMap().get("add"));
+        environment.getActiveProfiles();
         model.addAttribute("msg", "Go Go Go!!!");
         return "index.jsp";
     }
