@@ -1,5 +1,10 @@
 # SpringMVC学习总结
 
+## 整体介绍
+![avatar](DispatcherServlet.png)
+>> Servlet的整体继承结构一共有五个类，GenericServlet和HttpServlet是在Java中，HttpServletBean,FrameworkServlet和DispatcherServlet是在SpringMVC中的。
+>> XXXAware在spring里表示对XXX的感知：如果某个类里面想要使用spring里面的一些东西，就可以通过事项XXXAware接口，spring看到后就会给你送给过来接受方式通过setXXX方法。
+>> EnvironmentCapable，实现此接口代表可以提供Environment，当spring需要Environment的时候就会调用getEnvironment()方法。
 ## Servlet
 Servlet是一套规范
 ```java
@@ -243,3 +248,123 @@ protected void service(HttpServletRequest req, HttpServletResponse resp)
 ```
 HttpServlet将不同请求路由的不同方法,而SpringMVC中有将请求合并统一到一个方法进行处理.
 
+### HttpServletBean
+>> Servlet创建的时候可以直接条用无参init方法，HttpServletBean的int方法。
+
+```java 
+
+@Override
+public final void init() throws ServletException {
+    if (logger.isDebugEnabled()) {
+        logger.debug("Initializing servlet '" + getServletName() + "'");
+    }
+
+    // Set bean properties from init parameters.
+    try {
+        // 将Servlet中配置的参数封装到pvs变量中，requiredProperties为必须参数，如果没有报异常
+        PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
+        BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
+        ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+        bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
+        // 模板方法，在子类实现,做初始化工作，
+        initBeanWrapper(bw);
+        // 将初始化值设置到DispatcherServlet
+        bw.setPropertyValues(pvs, true);
+    }
+    catch (BeansException ex) {
+        logger.error("Failed to set bean properties on servlet '" + getServletName() + "'", ex);
+        throw ex;
+    }
+
+    // 模板方法，之类的初始化入口
+    initServletBean();
+
+    if (logger.isDebugEnabled()) {
+        logger.debug("Servlet '" + getServletName() + "' configured successfully");
+    }
+}
+```
+BeanWrapper是Spring提供的一个可以操作javaBean的工具，可以直接修改javaBean的属性值。
+### FrameworkServlet
+从HttpServletBean知，FrameworkServlet的入口方法为initServletBean()。
+
+```java
+@Override
+protected final void initServletBean() throws ServletException {
+    getServletContext().log("Initializing Spring FrameworkServlet '" + getServletName() + "'");
+    if (this.logger.isInfoEnabled()) {
+        this.logger.info("FrameworkServlet '" + getServletName() + "': initialization started");
+    }
+    long startTime = System.currentTimeMillis();
+
+    try {
+        // 初始化webApplicationContext
+        this.webApplicationContext = initWebApplicationContext();
+        // 初始化FrameworkServlet，模板方法子类可以实现
+        initFrameworkServlet();
+    }
+    catch (ServletException ex) {
+        this.logger.error("Context initialization failed", ex);
+        throw ex;
+    }
+    catch (RuntimeException ex) {
+        this.logger.error("Context initialization failed", ex);
+        throw ex;
+    }
+
+    if (this.logger.isInfoEnabled()) {
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        this.logger.info("FrameworkServlet '" + getServletName() + "': initialization completed in " +
+                elapsedTime + " ms");
+    }
+}
+```
+FrameworkServlet的构建过程主要就是初始化webApplicationContext().
+```java
+protected WebApplicationContext initWebApplicationContext() {
+    // 获取rootContext
+    WebApplicationContext rootContext =
+            WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+    WebApplicationContext wac = null;
+    // 如果已经通过构造方法设置了webApplicationContext
+    if (this.webApplicationContext != null) {
+        wac = this.webApplicationContext;
+        if (wac instanceof ConfigurableWebApplicationContext) {
+            ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext) wac;
+            if (!cwac.isActive()) {
+                if (cwac.getParent() == null) {
+                    cwac.setParent(rootContext);
+                }
+                configureAndRefreshWebApplicationContext(cwac);
+            }
+        }
+    }
+    if (wac == null) {
+        // 当webApplicationContext已经存在在ServletContext中时，通过配置在Servlet中的contextAttribute参数获取
+        wac = findWebApplicationContext();
+    }
+    if (wac == null) {
+        // webApplicationContext没有创建就创建一个。
+        wac = createWebApplicationContext(rootContext);
+    }
+
+    if (!this.refreshEventReceived) {
+        // refreshEventReceived没有触发调用此方法，模板方法子类实现
+        onRefresh(wac);
+    }
+
+    if (this.publishContext) {
+        // 将ApplicationContext保存到ServletContext中
+        String attrName = getServletContextAttributeName();
+        getServletContext().setAttribute(attrName, wac);
+        if (this.logger.isDebugEnabled()) {
+            this.logger.debug("Published WebApplicationContext of servlet '" + getServletName() +
+                    "' as ServletContext attribute with name [" + attrName + "]");
+        }
+    }
+
+    return wac;
+}
+```
+- 获取rootContext根容器的key为：org.springframework.web.context.WebApplicationContext.ROOT
+- 设置webApplicationContext并根据情况调用onRefresh方法
