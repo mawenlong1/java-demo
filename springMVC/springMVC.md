@@ -276,7 +276,7 @@ public final void init() throws ServletException {
         throw ex;
     }
 
-    // 模板方法，之类的初始化入口
+    // 模板方法，子类的初始化入口
     initServletBean();
 
     if (logger.isDebugEnabled()) {
@@ -865,3 +865,7 @@ protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Ex
     return null;
 }
 ```
+>> HandlerExecutionChain中执行时先执行Interceptor中的preHandler,最后执Handler.  
+- doDispatch流程图
+![doDispatch流程图](doDispatch.png "doDispatch流程图")
+## 3 组件分析
