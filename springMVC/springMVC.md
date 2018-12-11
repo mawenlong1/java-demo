@@ -869,3 +869,350 @@ protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Ex
 - doDispatch流程图
 ![doDispatch流程图](doDispatch.png "doDispatch流程图")
 ## 3 组件分析
+
+### 3.1 HandlerMapping
+![HandlerMapping继承结构图](HandlerMapping.png "HandlerMapping继承结构图")
+>> HandlerMapping主要分为两个分支：AbstractUrlHandlerMapping和AbstractHandlerMethodMapping。
+#### 3.1.1 AbstractHandlerMapping
+>> AbstractHandlerMapping采用模板模式，获取Handler过程通过模板方法getHandlerInternal交给子类。AbstractHandlerMapping中保存了所有配置的interceptors，然后Handler可以根据从reqeust提取的lookupPath将相应的interceptors装配上去。此类的主要作用是设置拦截器。
+##### 初始化
+>> AbstractHandlerMapping继承WebApplicationObjectSupport，初始化的时候会调用模板方法initApplicationContext方法
+```java
+protected void initApplicationContext() throws BeansException {
+    extendInterceptors(this.interceptors);
+    detectMappedInterceptors(this.adaptedInterceptors);
+    initInterceptors();
+}
+```
+   1. extendInterceptors是模板方法，用于子类提供一个添加（或修改）interceptors的入口
+   2. detectMappedInterceptors方法用于将SpringMVC容器及父容器的所有MappedInterceptor类型的Bean添加到mappedInterceptors属性。  
+```java
+protected void detectMappedInterceptors(List<HandlerInterceptor> mappedInterceptors) {
+    mappedInterceptors.addAll(
+            BeanFactoryUtils.beansOfTypeIncludingAncestors(
+                    getApplicationContext(), MappedInterceptor.class, true, false).values());
+}
+```    
+3. initInterceptors方法是初始化interceptors.将所有interceptor添加到adaptedInterceptors属性里面
+```java
+protected void initInterceptors() {
+    if (!this.interceptors.isEmpty()) {
+        for (int i = 0; i < this.interceptors.size(); i++) {
+            Object interceptor = this.interceptors.get(i);
+            if (interceptor == null) {
+                throw new IllegalArgumentException("Entry number " + i + " in interceptors array is null");
+            }
+            this.adaptedInterceptors.add(adaptInterceptor(interceptor));
+        }
+    }
+}
+```
+>> AbstractHandlerMapping的list类型的属性interceptors和adaptedInterceptors以及getMappedInterceptors()返回MappedInterceptor[]。
+- interceptors是用于配置SringMVC的拦截器，有两种设置方式:一是注册HandlerMapping是通过属性设置，二是子类通过实现extendInterceptors方法进行修改。
+- MappedInterceptor[]进行url请求匹配成功后才添加到HandlerExecutionChain。
+- adaptedInterceptors不需要匹配全部添加。
+##### 使用
+HandlerMapping通过getHandler方法来获取处理器Handler以及拦截器Interceptor。
+```java
+public final HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+    // 获取handler，子类实现
+    Object handler = getHandlerInternal(request);
+    if (handler == null) {
+        handler = getDefaultHandler();
+    }
+    if (handler == null) {
+        return null;
+    }
+    // Bean name or resolved handler?
+    if (handler instanceof String) {
+        String handlerName = (String) handler;
+        handler = getApplicationContext().getBean(handlerName);
+    }
+    // 添加拦截器
+    HandlerExecutionChain executionChain = getHandlerExecutionChain(handler, request);
+    if (CorsUtils.isCorsRequest(request)) {
+        CorsConfiguration globalConfig = this.corsConfigSource.getCorsConfiguration(request);
+        CorsConfiguration handlerConfig = getCorsConfiguration(handler, request);
+        CorsConfiguration config = (globalConfig != null ? globalConfig.combine(handlerConfig) : handlerConfig);
+        executionChain = getCorsHandlerExecutionChain(request, executionChain, config);
+    }
+    return executionChain;
+}
+```
+- 获取handler：通过模板方法getHandlerInternal获取，如果没有获取默认Handler，如果Handler是String类型这在容器内查找bean
+- 添加拦截器getHandlerExecutionChain方法。代码：
+```java
+protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpServletRequest request) {
+    // 创建变量
+    HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
+            (HandlerExecutionChain) handler : new HandlerExecutionChain(handler));
+
+    String lookupPath = this.urlPathHelper.getLookupPathForRequest(request);
+    // 添加符合要求的拦截器
+    for (HandlerInterceptor interceptor : this.adaptedInterceptors) {
+        if (interceptor instanceof MappedInterceptor) {
+            MappedInterceptor mappedInterceptor = (MappedInterceptor) interceptor;
+            // MappedInterceptor类型的拦截器只有匹配路径才添加
+            if (mappedInterceptor.matches(lookupPath, this.pathMatcher)) {
+                chain.addInterceptor(mappedInterceptor.getInterceptor());
+            }
+        }
+        else {
+            chain.addInterceptor(interceptor);
+        }
+    }
+    return chain;
+}
+```
+#### 3.1.2 AbstractUrlHandlerMapping
+>> 将url与对应的Handler保存在一个map中,在getHandlerInternal方法中从map中获取handler。AbstractUrlHandlerMapping实现具体用url从map中获取handler的过程以及map初始化。这里的map就是AbstractUrlHandlerMapping中的handlerMap，另外还单独定义了处理“/”请求的处理器rootHandler。
+```java
+protected Object getHandlerInternal(HttpServletRequest request) throws Exception {
+    String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
+    Object handler = lookupHandler(lookupPath, request);
+    // 通过url寻找为空
+    if (handler == null) {
+        // 定义临时变量保存找到的handler
+        Object rawHandler = null;
+        if ("/".equals(lookupPath)) {
+            rawHandler = getRootHandler();
+        }
+        if (rawHandler == null) {
+            rawHandler = getDefaultHandler();
+        }
+        if (rawHandler != null) {
+            // Bean name or resolved handler?
+            if (rawHandler instanceof String) {
+                String handlerName = (String) rawHandler;
+                rawHandler = getApplicationContext().getBean(handlerName);
+            }
+            // 校验找到的handler是否与reuqest匹配，模板方法
+            validateHandler(rawHandler, request);
+            handler = buildPathExposingHandler(rawHandler, lookupPath, lookupPath, null);
+        }
+    }
+    if (handler != null && logger.isDebugEnabled()) {
+        logger.debug("Mapping [" + lookupPath + "] to " + handler);
+    }
+    else if (handler == null && logger.isTraceEnabled()) {
+        logger.trace("No handler mapping found for [" + lookupPath + "]");
+    }
+    return handler;
+}
+```
+>> 除了lookupHandler和buildPathExposingHandler其他方法都很好理解。
+- lookupHandler是从map中查找handler，很多时候不能找到因为很多handler都是使用匹配模式入“/book/*”。方法代码：
+```java
+protected Object lookupHandler(String urlPath, HttpServletRequest request) throws Exception {
+    // 直接匹配
+    Object handler = this.handlerMap.get(urlPath);
+    if (handler != null) {
+        // handler为string，从容器中获取
+        if (handler instanceof String) {
+            String handlerName = (String) handler;
+            handler = getApplicationContext().getBean(handlerName);
+        }
+        validateHandler(handler, request);
+        return buildPathExposingHandler(handler, urlPath, urlPath, null);
+    }
+    // Pattern模式匹配，找到匹配matchingPatterns模式
+    List<String> matchingPatterns = new ArrayList<String>();
+    for (String registeredPattern : this.handlerMap.keySet()) {
+        if (getPathMatcher().match(registeredPattern, urlPath)) {
+            matchingPatterns.add(registeredPattern);
+        }
+        else if (useTrailingSlashMatch()) {
+            if (!registeredPattern.endsWith("/") && getPathMatcher().match(registeredPattern + "/", urlPath)) {
+                matchingPatterns.add(registeredPattern +"/");
+            }
+        }
+    }
+    // Pattern排序
+    String bestPatternMatch = null;
+    Comparator<String> patternComparator = getPathMatcher().getPatternComparator(urlPath);
+    if (!matchingPatterns.isEmpty()) {
+        Collections.sort(matchingPatterns, patternComparator);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Matching patterns for request [" + urlPath + "] are " + matchingPatterns);
+        }
+        bestPatternMatch = matchingPatterns.get(0);
+    }
+    if (bestPatternMatch != null) {
+        handler = this.handlerMap.get(bestPatternMatch);
+        if (handler == null) {
+            Assert.isTrue(bestPatternMatch.endsWith("/"));
+            handler = this.handlerMap.get(bestPatternMatch.substring(0, bestPatternMatch.length() - 1));
+        }
+        // Bean name or resolved handler?
+        if (handler instanceof String) {
+            String handlerName = (String) handler;
+            handler = getApplicationContext().getBean(handlerName);
+        }
+        validateHandler(handler, request);
+        String pathWithinMapping = getPathMatcher().extractPathWithinPattern(bestPatternMatch, urlPath);
+
+        // 之前通过sort方法进行排序，然后拿第一个作为bestPatternMatch的，不多有可能有多个Pattern的顺序相同,也即是sort方法返回为0,这里就是处理这种情况。
+        Map<String, String> uriTemplateVariables = new LinkedHashMap<String, String>();
+        for (String matchingPattern : matchingPatterns) {
+            if (patternComparator.compare(bestPatternMatch, matchingPattern) == 0) {
+                Map<String, String> vars = getPathMatcher().extractUriTemplateVariables(matchingPattern, urlPath);
+                Map<String, String> decodedVars = getUrlPathHelper().decodePathVariables(request, vars);
+                uriTemplateVariables.putAll(decodedVars);
+            }
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("URI Template variables for request [" + urlPath + "] are " + uriTemplateVariables);
+        }
+        return buildPathExposingHandler(handler, bestPatternMatch, pathWithinMapping, uriTemplateVariables);
+    }
+    // No handler found...
+    return null;
+}
+```
+- buildPathExposingHandler方法用于给查找到的handler设置两个拦截器PathExposingHandlerInterceptor和UriTemplateVariablesHandlerInterceptor.这是两个内部拦截器，主要作用是将当前url实际匹配的Pattern、匹配条件和url模板参数设置到request属性，这样后面就可以直接从request属性获取。
+```java
+protected Object buildPathExposingHandler(Object rawHandler, String bestMatchingPattern,
+        String pathWithinMapping, Map<String, String> uriTemplateVariables) {
+
+    HandlerExecutionChain chain = new HandlerExecutionChain(rawHandler);
+    chain.addInterceptor(new PathExposingHandlerInterceptor(bestMatchingPattern, pathWithinMapping));
+    if (!CollectionUtils.isEmpty(uriTemplateVariables)) {
+        chain.addInterceptor(new UriTemplateVariablesHandlerInterceptor(uriTemplateVariables));
+    }
+    return chain;
+}
+private class PathExposingHandlerInterceptor extends HandlerInterceptorAdapter {
+    private final String bestMatchingPattern;
+    private final String pathWithinMapping;
+
+    public PathExposingHandlerInterceptor(String bestMatchingPattern, String pathWithinMapping) {
+        this.bestMatchingPattern = bestMatchingPattern;
+        this.pathWithinMapping = pathWithinMapping;
+    }
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        exposePathWithinMapping(this.bestMatchingPattern, this.pathWithinMapping, request);
+        request.setAttribute(INTROSPECT_TYPE_LEVEL_MAPPING, supportsTypeLevelMappings());
+        return true;
+    }
+
+}
+private class UriTemplateVariablesHandlerInterceptor extends HandlerInterceptorAdapter {
+    private final Map<String, String> uriTemplateVariables;
+
+    public UriTemplateVariablesHandlerInterceptor(Map<String, String> uriTemplateVariables) {
+        this.uriTemplateVariables = uriTemplateVariables;
+    }
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        exposeUriTemplateVariables(this.uriTemplateVariables, request);
+        return true;
+    }
+}
+```
+>> map初始化是通过registerHandler方法进行，这个方法不是父类调用是其子类调用。这样不同子类可以通过注册不同的handler。AbstractUrlHandlerMapping有两个registerHandler方法一个是注册多个url到一个处理器，实现就是遍历url调用第二个进行注册。另一个注册过程是，先看原来map有没有传入url没有就添加进去，如果有就看handler是否是同一个如果不是就有问题。还有就是不放“/”或者"/*".
+```java
+protected void registerHandler(String urlPath, Object handler) throws BeansException, IllegalStateException {
+    Assert.notNull(urlPath, "URL path must not be null");
+    Assert.notNull(handler, "Handler object must not be null");
+    Object resolvedHandler = handler;
+
+    // Eagerly resolve handler if referencing singleton via name.
+    if (!this.lazyInitHandlers && handler instanceof String) {
+        String handlerName = (String) handler;
+        if (getApplicationContext().isSingleton(handlerName)) {
+            resolvedHandler = getApplicationContext().getBean(handlerName);
+        }
+    }
+
+    Object mappedHandler = this.handlerMap.get(urlPath);
+    if (mappedHandler != null) {
+        if (mappedHandler != resolvedHandler) {
+            throw new IllegalStateException(
+                    "Cannot map " + getHandlerDescription(handler) + " to URL path [" + urlPath +
+                    "]: There is already " + getHandlerDescription(mappedHandler) + " mapped.");
+        }
+    }
+    else {
+        if (urlPath.equals("/")) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Root mapping to " + getHandlerDescription(handler));
+            }
+            setRootHandler(resolvedHandler);
+        }
+        else if (urlPath.equals("/*")) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Default mapping to " + getHandlerDescription(handler));
+            }
+            setDefaultHandler(resolvedHandler);
+        }
+        else {
+            this.handlerMap.put(urlPath, resolvedHandler);
+            if (logger.isInfoEnabled()) {
+                logger.info("Mapped URL path [" + urlPath + "] onto " + getHandlerDescription(handler));
+            }
+        }
+    }
+}
+```
+#### 3.1.3 SimpleUrlHandlerMapping
+>> 其中定义了一个map变量urlMap，作用为方便配置以及在注册前做一下预处理，将所有url和handler的对应关系放在里面，最后注册前做一些预处理。
+>> SimpleUrlHandlerMapping重写了父类initApplicationContext，调用registerHandlers方法完成handler注册。
+```java
+private final Map<String, Object> urlMap = new LinkedHashMap<String, Object>();
+public void initApplicationContext() throws BeansException {
+    super.initApplicationContext();
+    registerHandlers(this.urlMap);
+}
+protected void registerHandlers(Map<String, Object> urlMap) throws BeansException {
+    if (urlMap.isEmpty()) {
+        logger.warn("Neither 'urlMap' nor 'mappings' set on SimpleUrlHandlerMapping");
+    }
+    else {
+        for (Map.Entry<String, Object> entry : urlMap.entrySet()) {
+            String url = entry.getKey();
+            Object handler = entry.getValue();
+            // Prepend with slash if not already present.
+            if (!url.startsWith("/")) {
+                url = "/" + url;
+            }
+            // Remove whitespace from handler bean name.
+            if (handler instanceof String) {
+                handler = ((String) handler).trim();
+            }
+            registerHandler(url, handler);
+        }
+    }
+}
+```
+#### 3.1.3 AbstractDetectingUrlHandlerMapping
+>> 这个类也通过重写initApplicationContext来注册handler里面调用detectHandlers()，在detectHandlers中根据配置的detectHandlersInAncestorContexts参数从springMVC容器及其父容器找到所有的bean的beanName，然后用determineUrlsForHandler方法对每个beanName解析出对应的urls，如果解析不为空就注册到父类map。determineUrlsForHandler是模板方法子类实现。
+```java
+public void initApplicationContext() throws ApplicationContextException {
+    super.initApplicationContext();
+    detectHandlers();
+}
+protected void detectHandlers() throws BeansException {
+    if (logger.isDebugEnabled()) {
+        logger.debug("Looking for URL mappings in application context: " + getApplicationContext());
+    }
+    String[] beanNames = (this.detectHandlersInAncestorContexts ?
+            BeanFactoryUtils.beanNamesForTypeIncludingAncestors(getApplicationContext(), Object.class) :
+            getApplicationContext().getBeanNamesForType(Object.class));
+
+    // Take any bean name that we can determine URLs for.
+    for (String beanName : beanNames) {
+        String[] urls = determineUrlsForHandler(beanName);
+        if (!ObjectUtils.isEmpty(urls)) {
+            // URL paths found: Let's consider it a handler.
+            registerHandler(urls, beanName);
+        }
+        else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Rejected bean name '" + beanName + "': no URL paths identified");
+            }
+        }
+    }
+}
+```
