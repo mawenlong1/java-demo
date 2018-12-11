@@ -1363,3 +1363,75 @@ protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handler
 }
 ```
 - AbstractHandlerMethodMapping使用
+>> 类主要通过getHandlerInternal方法获取处理器
+```java
+protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
+    // 根据request获取lookupPath
+    String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
+    if (logger.isDebugEnabled()) {
+        logger.debug("Looking up handler method for path " + lookupPath);
+    }
+    this.mappingRegistry.acquireReadLock();
+    try {
+        // 找到handlerMethod
+        HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
+        if (logger.isDebugEnabled()) {
+            if (handlerMethod != null) {
+                logger.debug("Returning handler method [" + handlerMethod + "]");
+            }
+            else {
+                logger.debug("Did not find handler method for [" + lookupPath + "]");
+            }
+        }
+        // 找到调用createWithResolvedBean并返回
+        return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
+    }
+    finally {
+        this.mappingRegistry.releaseReadLock();
+    }
+}
+
+protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
+    // Match是内部类，保存匹配条件和Handler
+    List<Match> matches = new ArrayList<Match>();
+    // 根据lookupPath获取匹配条件
+    List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
+    if (directPathMatches != null) {
+        // 找到的匹配条件添加到matches
+        addMatchingMappings(directPathMatches, matches, request);
+    }
+    // 如果不能直接使用lookupPath得到匹配条件，则将所有匹配条件加入matches
+    if (matches.isEmpty()) {
+        addMatchingMappings(this.mappingRegistry.getMappings().keySet(), matches, request);
+    }
+    // 将包含匹配条件和handler的matches排序，并取第一个作为bestMatch，如果前面两个排序相同则抛出异常
+    if (!matches.isEmpty()) {
+        Comparator<Match> comparator = new MatchComparator(getMappingComparator(request));
+        Collections.sort(matches, comparator);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Found " + matches.size() + " matching mapping(s) for [" +
+                    lookupPath + "] : " + matches);
+        }
+        Match bestMatch = matches.get(0);
+        if (matches.size() > 1) {
+            if (CorsUtils.isPreFlightRequest(request)) {
+                return PREFLIGHT_AMBIGUOUS_MATCH;
+            }
+            Match secondBestMatch = matches.get(1);
+            if (comparator.compare(bestMatch, secondBestMatch) == 0) {
+                Method m1 = bestMatch.handlerMethod.getMethod();
+                Method m2 = secondBestMatch.handlerMethod.getMethod();
+                throw new IllegalStateException("Ambiguous handler methods mapped for HTTP path '" +
+                        request.getRequestURL() + "': {" + m1 + ", " + m2 + "}");
+            }
+        }
+        handleMatch(bestMatch.mapping, lookupPath, request);
+        return bestMatch.handlerMethod;
+    }
+    else {
+        return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
+    }
+}
+```
+>> 这个过程是使用Match作为载体的，Match是一个内部类，封装了匹配条件和HandlerMethod两个属性。handleMatch方法是在返回前做一些处理，默认实现将lookupPath设置到request属性，子类RequestMappingInfoHandlerMapping中进行了重写，将更多的参数设置到了request属性，主要为了以后使用方便。
+### 3.2 HandlerAdapter
