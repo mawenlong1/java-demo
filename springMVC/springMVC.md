@@ -1197,15 +1197,17 @@ protected void detectHandlers() throws BeansException {
     if (logger.isDebugEnabled()) {
         logger.debug("Looking for URL mappings in application context: " + getApplicationContext());
     }
+    // 获取容器所有bean的name
     String[] beanNames = (this.detectHandlersInAncestorContexts ?
             BeanFactoryUtils.beanNamesForTypeIncludingAncestors(getApplicationContext(), Object.class) :
             getApplicationContext().getBeanNamesForType(Object.class));
 
-    // Take any bean name that we can determine URLs for.
+    // 对每个beanName解析url，如果能解析到就注册到父类的map中
     for (String beanName : beanNames) {
+        // 使用beanname解析url，模板方法
         String[] urls = determineUrlsForHandler(beanName);
+        // 解析到就注册到父类
         if (!ObjectUtils.isEmpty(urls)) {
-            // URL paths found: Let's consider it a handler.
             registerHandler(urls, beanName);
         }
         else {
@@ -1216,3 +1218,148 @@ protected void detectHandlers() throws BeansException {
     }
 }
 ```
+AbstractDetectingUrlHandlerMapping存在三个子类：
+- DefaultAnnotationHandlerMapping（已经标记为废弃）不分析
+- BeanNameUrlHandlerMapping
+>> 检查beanNameh和alias是不是以"/"开头,如果是则将其作为url,里面只有一个方法determineUrlsForHandler
+```java
+protected String[] determineUrlsForHandler(String beanName) {
+    List<String> urls = new ArrayList<String>();
+    if (beanName.startsWith("/")) {
+        urls.add(beanName);
+    }
+    String[] aliases = getApplicationContext().getAliases(beanName);
+    for (String alias : aliases) {
+        if (alias.startsWith("/")) {
+            urls.add(alias);
+        }
+    }
+    return StringUtils.toStringArray(urls);
+}
+```
+- AbstractControllerUrlHandlerMapping
+>>AbstractControllerUrlHandlerMapping是将实现了Contrller接口或注释了@Controller的bean作为Handler,并且可以通过设置excludedClasses和excludedPackages排除一些bean。这里的determineUrlsForHandler方法主要负责将符合条件的Handler找出了，而具体什么url则使用模板方法buildUrlsForHandler交给子类去做。代码（省略日志）：
+```java
+private Set<String> excludedPackages = Collections.singleton("org.springframework.web.servlet.mvc");
+private Set<Class<?>> excludedClasses = Collections.emptySet();
+protected String[] determineUrlsForHandler(String beanName) {
+    Class<?> beanClass = getApplicationContext().getType(beanName);
+    // 判断是不是支持的类型
+    if (isEligibleForMapping(beanName, beanClass)) {
+        // 模板方法
+        return buildUrlsForHandler(beanName, beanClass);
+    }
+    else {
+        return null;
+    }
+}
+protected boolean isEligibleForMapping(String beanName, Class<?> beanClass) {
+    if (beanClass == null) {
+        return false;
+    }
+    // 排除excludedClasses里面配置的类
+    if (this.excludedClasses.contains(beanClass)) {
+        return false;
+    }
+    String beanClassName = beanClass.getName();
+    // 排除excludedPackages里面配置的包下的类
+    for (String packageName : this.excludedPackages) {
+        if (beanClassName.startsWith(packageName)) {
+            return false;
+        }
+    }
+    // 检查是否实现了Controller接口或者注释了@Controller
+    return isControllerType(beanClass);
+}
+```
+>> 它有两个子类ControllerBeanNameHandlerMapping和ControllerClassNameHandlerMapping，从名称一个使用className作为url另一个使用spring容器中的beanName作为url。
+#### 3.1.4 AbstractHandlerMethodMapping
+>> AbstractHandlerMethodMapping系列只有三个类：AbstractHandlerMethodMapping、RequestMappingInfoHandlerMapping和RequestMappingHandlerMapping，这三个类依次继承。AbstractHandlerMethodMapping系列是将Method作为Handler来使用，这是使用最多的Handler，经常使用的@RequestMapping所注释的方法就是这种Handler，它有一个类型--HandlerMethod，也就是Method类型的Handler。
+```java
+private final Map<T, HandlerMethod> handlerMethods = new LinkedHashMap<T, HandlerMethod>();
+private final MultiValueMap<String, T> urlMap = new LinkedMultiValueMap<String, T>();
+private final MultiValueMap<String, HandlerMethod> nameMap = new LinkedMultiValueMap<String, HandlerMethod>();
+```
+>> 这里的泛型T是RequestMappingInfo其实现了RequestCondition这个接口，此接口专门保存从reuqest提取出来用于匹配Handler的条件。结构图：
+![RequestCondition结构图](RequestCondition.png "RequestCondition结构图")
+>> 抽象实现AbstractRequestCondition中重写了equals、hashCode和toString三个方法，有八个子类。除了CompositeRequestCondition外每个子类表示一种匹配条件。CompositeRequestCondition本身不做实际匹配而是将多个RequestCondition封装到一个变量，用的时候遍历变量的所有进行匹配，这就是责任链模式。
+>> 另一个实现RequestMappingInfo，它里面用了七个变量保存七个RequestCondition，匹配的时候使用七个变量进行匹配。
+>> handlerMethods：保存匹配条件和Handler对应关系。
+>> urlMap:保存着url与匹配条件的对应关系。
+>> nameMap:保存name与HandlerMethod的对应关系。
+>> AbstractHandlerMethodMapping实现了InitializingBean接口，spring容器会自动调用afterPropertiesSet，这个方法有调用了initHandlerMethods方法完成具体的初始化。
+```java
+public void afterPropertiesSet() {
+    initHandlerMethods();
+}
+protected void initHandlerMethods() {
+    if (logger.isDebugEnabled()) {
+        logger.debug("Looking for request mappings in application context: " + getApplicationContext());
+    }
+    String[] beanNames = (this.detectHandlerMethodsInAncestorContexts ?
+            BeanFactoryUtils.beanNamesForTypeIncludingAncestors(getApplicationContext(), Object.class) :
+            getApplicationContext().getBeanNamesForType(Object.class));
+
+    for (String beanName : beanNames) {
+        if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
+            Class<?> beanType = null;
+            try {
+                beanType = getApplicationContext().getType(beanName);
+            }
+            catch (Throwable ex) {
+                // An unresolvable bean type, probably from a lazy bean - let's ignore it.
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Could not resolve target class for bean with name '" + beanName + "'", ex);
+                }
+            }
+            if (beanType != null && isHandler(beanType)) {
+                detectHandlerMethods(beanName);
+            }
+        }
+    }
+    handlerMethodsInitialized(getHandlerMethods());
+}
+//筛选方法RequestMappingHandlerMapping实现，判断时候有相应的注解
+protected boolean isHandler(Class<?> beanType) {
+    return ((AnnotationUtils.findAnnotation(beanType, Controller.class) != null) ||
+            (AnnotationUtils.findAnnotation(beanType, RequestMapping.class) != null));
+}
+```
+>> detectHandlerMethods负责将Handler保存到Map里，handlerMethodsInitialized可以对Handler进行一些初始化模板方法（子类没有实现）
+```java
+protected void detectHandlerMethods(final Object handler) {
+    // 获取Handler类型
+    Class<?> handlerType = (handler instanceof String ?
+            getApplicationContext().getType((String) handler) : handler.getClass());
+    // 如果是cglib代理的子对象，则返回父类型，否则返回传入的类型
+    final Class<?> userType = ClassUtils.getUserClass(handlerType);
+    // 获取当前bean里所有符合Handler要求的Method
+    Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
+            new MethodIntrospector.MetadataLookup<T>() {
+                @Override
+                public T inspect(Method method) {
+                    return getMappingForMethod(method, userType);
+                }
+            });
+
+    if (logger.isDebugEnabled()) {
+        logger.debug(methods.size() + " request handler methods found on " + userType + ": " + methods);
+    }
+    // 进行注册
+    for (Map.Entry<Method, T> entry : methods.entrySet()) {
+        registerHandlerMethod(handler, entry.getKey(), entry.getValue());
+    }
+}
+//RequestMappingHandlerMapping
+protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
+    RequestMappingInfo info = createRequestMappingInfo(method);
+    if (info != null) {
+        RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
+        if (typeInfo != null) {
+            info = typeInfo.combine(info);
+        }
+    }
+    return info;
+}
+```
+- AbstractHandlerMethodMapping使用
