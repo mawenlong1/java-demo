@@ -2014,7 +2014,5 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 					(AnnotationUtils.findAnnotation(method, ModelAttribute.class) != null));
 		}
 	};
-
 }
-
 ```
