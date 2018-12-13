@@ -1840,18 +1840,22 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
         // 用来创建WebDataBinder的，WebDataBinder用于参数绑定，主要功能就是实现参数跟String之间的类型转换，ArgumentResolver在进行参数解析的时候会用到WebDataBinder，另外ModelFactory在更新Model时也会用到它
 		WebDataBinderFactory binderFactory = getDataBinderFactory(handlerMethod);
         // 处理Model，1.处理之前对Model进行初始化，2.处理请求完成后对Model参数进行更新
-		ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
+        ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
+        // 新建ServletInvocableHandlerMethod并设置解析类
 		ServletInvocableHandlerMethod invocableMethod = createInvocableHandlerMethod(handlerMethod);
 		invocableMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
 		invocableMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
 		invocableMethod.setDataBinderFactory(binderFactory);
 		invocableMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
-
-		ModelAndViewContainer mavContainer = new ModelAndViewContainer();
-		mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
-		modelFactory.initModel(webRequest, mavContainer, invocableMethod);
+        // 新建传递参数的ModelAndViewContainer，并将相应的参数设置到Model
+        ModelAndViewContainer mavContainer = new ModelAndViewContainer();
+        // 将FlashMap中的数据设置到Model
+        mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
+        // 使用modelFactory将SessionAttribute和注释@ModelAttribute的方法参数设置到Model
+        modelFactory.initModel(webRequest, mavContainer, invocableMethod);
+        // 根据配置对ignoreDefaultModelOnRedirect进行设置
 		mavContainer.setIgnoreDefaultModelOnRedirect(this.ignoreDefaultModelOnRedirect);
-
+        // 异步请求相关
 		AsyncWebRequest asyncWebRequest = WebAsyncUtils.createAsyncWebRequest(request, response);
 		asyncWebRequest.setTimeout(this.asyncRequestTimeout);
 
@@ -1870,12 +1874,12 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			}
 			invocableMethod = invocableMethod.wrapConcurrentResult(result);
 		}
-
+        // 执行请求
 		invocableMethod.invokeAndHandle(webRequest, mavContainer);
 		if (asyncManager.isConcurrentHandlingStarted()) {
 			return null;
 		}
-
+        // 请求完成进行一些后置处理
 		return getModelAndView(mavContainer, modelFactory, webRequest);
 	}
 
@@ -1958,15 +1962,6 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		binderMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
 		return binderMethod;
 	}
-
-	/**
-	 * Template method to create a new InitBinderDataBinderFactory instance.
-	 * <p>The default implementation creates a ServletRequestDataBinderFactory.
-	 * This can be overridden for custom ServletRequestDataBinder subclasses.
-	 * @param binderMethods {@code @InitBinder} methods
-	 * @return the InitBinderDataBinderFactory instance to use
-	 * @throws Exception in case of invalid state or arguments
-	 */
 	protected InitBinderDataBinderFactory createDataBinderFactory(List<InvocableHandlerMethod> binderMethods)
 			throws Exception {
 
@@ -1975,13 +1970,15 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 	private ModelAndView getModelAndView(ModelAndViewContainer mavContainer,
 			ModelFactory modelFactory, NativeWebRequest webRequest) throws Exception {
-
+        // 调用modelFactory的updateModel方法更新Model（包括设置了SessionAttribute和给Model设置BindingResult）
 		modelFactory.updateModel(webRequest, mavContainer);
 		if (mavContainer.isRequestHandled()) {
 			return null;
 		}
-		ModelMap model = mavContainer.getModel();
-		ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model);
+        ModelMap model = mavContainer.getModel();
+        // 根据mavContainer创建ModelAndView
+        ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model);
+        // 如果mavContainer里的model是RedirectAttributes类型,这则将其设置到FlashMap
 		if (!mavContainer.isViewReference()) {
 			mav.setView((View) mavContainer.getView());
 		}
@@ -1992,8 +1989,6 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		}
 		return mav;
 	}
-
-
 	/**
 	 * MethodFilter that matches {@link InitBinder @InitBinder} methods.
 	 */
@@ -2003,7 +1998,6 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			return AnnotationUtils.findAnnotation(method, InitBinder.class) != null;
 		}
 	};
-
 	/**
 	 * MethodFilter that matches {@link ModelAttribute @ModelAttribute} methods.
 	 */
@@ -2016,3 +2010,245 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	};
 }
 ```
+>> RequestMappingHandlerAdapter的处理请求的过程,下面分析设计的组件.
+
+#### 3.2.2 ModelAndViewContainer
+>> ModelAndViewContainer承担着整个请求过程中的数据的传递工作。它除了报错Model和View外还有一些其他的功能。
+```java
+private boolean ignoreDefaultModelOnRedirect = false;
+// 视图，可以是实际视图也可以是String类型的逻辑视图
+private Object view;
+//默认使用的Model
+private final ModelMap defaultModel = new BindingAwareModelMap();
+// redirect类型的Model
+private ModelMap redirectModel;
+// 处理器返回redirect视图的标志
+private boolean redirectModelScenario = false;
+// 用于设置SessionAttribute使用完的标志
+private final SessionStatus sessionStatus = new SimpleSessionStatus();
+// 请求是否已经完成的标志
+private boolean requestHandled = false;
+```
+#### 3.2.3 SessionAttributesHandler和SessionAttributeStore
+
+
+#### 3.2.4 ModelFactory
+>> ModelFactory是用来维护Model的，具体用两个功能：初始化Model以及处理器执行后将Model中相应的参数更新到SessionAttributes中。
+
+```java
+public void initModel(NativeWebRequest request, ModelAndViewContainer mavContainer, HandlerMethod handlerMethod)
+        throws Exception {
+    // 从sessionAttributes中取出保存的参数，并合并到mavContainer
+    Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
+    mavContainer.mergeAttributes(sessionAttributes);
+    // 执行注释了@ModelAttribute的方法并将结果设置到Model
+    invokeModelAttributeMethods(request, mavContainer);
+    // 遍历即注释了@ModelAttribute又在@SessionAttributes注释中的参数
+    for (String name : findSessionAttributeArguments(handlerMethod)) {
+        if (!mavContainer.containsAttribute(name)) {
+            Object value = this.sessionAttributesHandler.retrieveAttribute(request, name);
+            if (value == null) {
+                throw new HttpSessionRequiredException("Expected session attribute '" + name + "'");
+            }
+            mavContainer.addAttribute(name, value);
+        }
+    }
+}
+```
+- 执行注释了@ModelAttribute的方法并将结果设置到Model
+```java
+private void invokeModelAttributeMethods(NativeWebRequest request, ModelAndViewContainer mavContainer)
+        throws Exception {
+    while (!this.modelMethods.isEmpty()) {
+        // 注释了@ModelAttribute的方法
+        InvocableHandlerMethod attrMethod = getNextModelMethod(mavContainer).getHandlerMethod();
+        // 获取注释@ModelAttribute中设置的value作为参数名
+        String modelName = attrMethod.getMethodAnnotation(ModelAttribute.class).value();
+        // 如果参数已经在mavContainer中跳过
+        if (mavContainer.containsAttribute(modelName)) {
+            continue;
+        }
+        // 执行注释了@ModelAttribute的方法
+        Object returnValue = attrMethod.invokeForRequest(request, mavContainer);
+
+        if (!attrMethod.isVoid()){
+            // 获取参数名
+            String returnValueName = getNameForReturnValue(returnValue, attrMethod.getReturnType());
+            if (!mavContainer.containsAttribute(returnValueName)) {
+                mavContainer.addAttribute(returnValueName, returnValue);
+            }
+        }
+    }
+}
+
+public static String getNameForReturnValue(Object returnValue, MethodParameter returnType) {
+    // 获取返回值的@ModelAttribute注释
+    ModelAttribute annotation = returnType.getMethodAnnotation(ModelAttribute.class);
+    // 设置了value直接返回value的值
+    if (annotation != null && StringUtils.hasText(annotation.value())) {
+        return annotation.value();
+    }
+    else {
+        // 否则使用getVariableNameForReturnType根据方法、返回值类型和返回值获取参数名
+        Method method = returnType.getMethod();
+        Class<?> resolvedType = GenericTypeResolver.resolveReturnType(method, returnType.getContainingClass());
+        return Conventions.getVariableNameForReturnType(method, resolvedType, returnValue);
+    }
+}
+```
+- 遍历即注释了@ModelAttribute又在@SessionAttributes注释中的参数
+```java
+private List<String> findSessionAttributeArguments(HandlerMethod handlerMethod) {
+    List<String> result = new ArrayList<String>();
+    // 遍历方法的每个参数，如果有@ModelAttribute注释则获取到它对应的参数名，然后用获取到的参数名和参数的类型检查是不是@SessionAttribute注释，如果在这符合要求
+    for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
+        if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
+            // 获取@ModelAttribute注释的参数对应参数名
+            String name = getNameForParameter(parameter);
+            if (this.sessionAttributesHandler.isHandlerSessionAttribute(name, parameter.getParameterType())) {
+                result.add(name);
+            }
+        }
+    }
+    return result;
+}
+public static String getNameForParameter(MethodParameter parameter) {
+    ModelAttribute annot = parameter.getParameterAnnotation(ModelAttribute.class);
+    String attrName = (annot != null) ? annot.value() : null;
+    // 首先从注释中获取,如果注释中没有使用Conventions的getVariableNameForParameter方法获取
+    return StringUtils.hasText(attrName) ? attrName :  Conventions.getVariableNameForParameter(parameter);
+}
+```
+- 更新Model
+```java
+public void updateModel(NativeWebRequest request, ModelAndViewContainer mavContainer) throws Exception {
+    ModelMap defaultModel = mavContainer.getDefaultModel();
+    // 如果SessionStatus#setComplete则将SessionAttributes清空，否则将defaultModel相应的参数设置到SessionAttributes
+    if (mavContainer.getSessionStatus().isComplete()){
+        this.sessionAttributesHandler.cleanupAttributes(request);
+    }
+    else {
+        this.sessionAttributesHandler.storeAttributes(request, defaultModel);
+    }
+    // 判断请求是否已经处理完成或者是redirect类型的返回值，就是判断是否需要渲染页面，如果需要则给model中相应参数设置BindingResult
+    if (!mavContainer.isRequestHandled() && mavContainer.getModel() == defaultModel) {
+        updateBindingResult(request, defaultModel);
+    }
+}
+private void updateBindingResult(NativeWebRequest request, ModelMap model) throws Exception {
+    // 取出Model中的所有参数
+    List<String> keyNames = new ArrayList<String>(model.keySet());
+    for (String name : keyNames) {
+        Object value = model.get(name);
+        // 判断是否需要添加BindingResult
+        if (isBindingCandidate(name, value)) {
+            String bindingResultKey = BindingResult.MODEL_KEY_PREFIX + name;
+
+            if (!model.containsAttribute(bindingResultKey)) {
+                WebDataBinder dataBinder = dataBinderFactory.createBinder(request, value, name);
+                model.put(bindingResultKey, dataBinder.getBindingResult());
+            }
+        }
+    }
+}
+private boolean isBindingCandidate(String attributeName, Object value) {
+    // 判断本身是不是其他参数绑定结果的BindingResult，如果是则不需要
+    if (attributeName.startsWith(BindingResult.MODEL_KEY_PREFIX)) {
+        return false;
+    }
+    Class<?> attrType = (value != null) ? value.getClass() : null;
+    // 判断是不是SessionAttribute管理的属性，如果是返回true
+    if (this.sessionAttributesHandler.isHandlerSessionAttribute(attributeName, attrType)) {
+        return true;
+    }
+    // 最后检查是不是空值、数组、Collection等，如果是返回true
+    return (value != null && !value.getClass().isArray() && !(value instanceof Collection) &&
+            !(value instanceof Map) && !BeanUtils.isSimpleValueType(value.getClass()));
+}
+
+```
+#### 3.2.5 ServletInvocableHandlerMethod
+>> ServletInvocableHandlerMethod其实就是一种HandlerMethod，只是添加了方法执行的功能。 
+- HandlerMethod
+>> 用于封装Handelr和其中处理请求的Handler，分别对应 其中的bean和method属性.
+```java
+private final Object bean;
+private final Method method;
+// 新建HandlerMethod时传入的Handler（bean属性）是String的情况
+private final BeanFactory beanFactory;
+// 如果method是bridged method则设置为其所对应的原有方法否则设置为method
+private final Method bridgedMethod;
+// 请求的方法的参数
+private final MethodParameter[] parameters;
+```
+>> 所有的属性都是final，创建之后就不能修改。Handerl如果是String类型，将其变为容器中对应bean的过程在专门方法createWithResolvedBean中
+```java
+public HandlerMethod createWithResolvedBean() {
+    Object handler = this.bean;
+    if (this.bean instanceof String) {
+        String beanName = (String) this.bean;
+        handler = this.beanFactory.getBean(beanName);
+    }
+    return new HandlerMethod(this, handler);
+}
+```
+>>MethodParameter类型的对象表示一个方法的参数,代码：
+```java
+    // 参数所在方法
+	private final Method method;
+    // 参数的构成方法
+	private final Constructor<?> constructor;
+    // 参数的序号，就是第几个参数
+	private final int parameterIndex;
+    // 嵌套级别，如果是复合参数会用到，比如：List<String> params参数，则params的嵌套级别为1，List内部的String的嵌套级别为2
+	private int nestingLevel = 1;
+	// 保存每层嵌套参数的序数
+	Map<Integer, Integer> typeIndexesPerLevel;
+    // 容器的类型，也就是参数所属方法所在的类
+	private volatile Class<?> containingClass;
+    // 参数的类型
+	private volatile Class<?> parameterType;
+    // Type型的参数类型
+	private volatile Type genericParameterType;
+    // 参数的注释
+	private volatile Annotation[] parameterAnnotations;
+    // 参数名称查找器
+	private volatile ParameterNameDiscoverer parameterNameDiscoverer;
+    // 参数名称
+	private volatile String parameterName;
+
+```
+>> MethodParameter中最重要的是method和parameterIndex，有了这两个参数后参数类型、注释等都可以获取到。不过在正常的反射技术里是不知道参数名的，所以这里专门使用了一个参数名查找的组件parameterNameDiscoverer，它可以查找出我们定义参数时参数的名称，这就给ArgumentResolver的解析提供方便。  
+
+>> 在HandlerMethod中定义了两个内部类来封装参数，一个封装方法调用的参数，一个封装方法返回的参数。
+```java
+private class HandlerMethodParameter extends MethodParameter {
+    public HandlerMethodParameter(int index) {
+        super(HandlerMethod.this.bridgedMethod, index);
+    }
+    @Override
+    public Class<?> getDeclaringClass() {
+        return HandlerMethod.this.getBeanType();
+    }
+    @Override
+    public <T extends Annotation> T getMethodAnnotation(Class<T> annotationType) {
+        return HandlerMethod.this.getMethodAnnotation(annotationType);
+    }
+}
+private class ReturnValueMethodParameter extends HandlerMethodParameter {
+    private final Object returnValue;
+    public ReturnValueMethodParameter(Object returnValue) {
+        super(-1);
+        this.returnValue = returnValue;
+    }
+    @Override
+    public Class<?> getParameterType() {
+        return (this.returnValue != null ? this.returnValue.getClass() : super.getParameterType());
+    }
+}
+```
+- InvocableHandlerMethod
+- ServletInvocableHandlerMethod
+
+
+#### 3.2.6 ServletInvocableHandlerMethod
