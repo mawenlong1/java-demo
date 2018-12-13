@@ -2248,7 +2248,214 @@ private class ReturnValueMethodParameter extends HandlerMethodParameter {
 }
 ```
 - InvocableHandlerMethod
+>> InvocableHandlerMethod继承自HandlerMethod,在父类的基础上添加了调用功能，也就是说InvocableHandlerMethod可以直接调用内部属性method对应的方法。这个类添加个三个属性：
+```java
+    // 用于参数解析器ArgumentResolver
+    private WebDataBinderFactory dataBinderFactory;
+    // 用于解析参数
+    private HandlerMethodArgumentResolverComposite argumentResolvers = new HandlerMethodArgumentResolverComposite();
+    // 用来获取参数名，用于MethodParameter
+	private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+```
+InvocableHandlerMethod中Method调用的方法是invokeForRequest
+```java
+public Object invokeForRequest(NativeWebRequest request, ModelAndViewContainer mavContainer,
+        Object... providedArgs) throws Exception {
+
+    Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
+    if (logger.isTraceEnabled()) {
+        StringBuilder sb = new StringBuilder("Invoking [");
+        sb.append(getBeanType().getSimpleName()).append(".");
+        sb.append(getMethod().getName()).append("] method with arguments ");
+        sb.append(Arrays.asList(args));
+        logger.trace(sb.toString());
+    }
+    Object returnValue = doInvoke(args);
+    if (logger.isTraceEnabled()) {
+        logger.trace("Method [" + getMethod().getName() + "] returned [" + returnValue + "]");
+    }
+    return returnValue;
+}
+```
+主要做了两件事：一是准备方法所需要的参数，使用的是getMethodArgumentValues方法，另一条用于具体调用Method，具体使用的是doInvoke方法这个方法是实际执行请求处理的方法。
+```java
+protected Object doInvoke(Object... args) throws Exception {
+    ReflectionUtils.makeAccessible(getBridgedMethod());
+    try {
+        return getBridgedMethod().invoke(getBean(), args);
+    }
+    catch (IllegalArgumentException ex) {
+        assertTargetBean(getBridgedMethod(), getBean(), args);
+        String message = (ex.getMessage() != null ? ex.getMessage() : "Illegal argument");
+        throw new IllegalStateException(getInvocationErrorMessage(message, args), ex);
+    }
+    catch (InvocationTargetException ex) {
+        // Unwrap for HandlerExceptionResolvers ...
+        Throwable targetException = ex.getTargetException();
+        if (targetException instanceof RuntimeException) {
+            throw (RuntimeException) targetException;
+        }
+        else if (targetException instanceof Error) {
+            throw (Error) targetException;
+        }
+        else if (targetException instanceof Exception) {
+            throw (Exception) targetException;
+        }
+        else {
+            String msg = getInvocationErrorMessage("Failed to invoke controller method", args);
+            throw new IllegalStateException(msg, targetException);
+        }
+    }
+}
+```
+>> 真正执行的方法就是直接调用bridgedMethod的invoke方法，在调用前先使用ReflectionUtils.makeAccessible强制将它变为可调用，也就是说private方法也可以被调用
+
+>> 参数绑定的getMethodArgumentValues方法
+```java
+private Object[] getMethodArgumentValues(NativeWebRequest request, ModelAndViewContainer mavContainer,
+        Object... providedArgs) throws Exception {
+    // 获取方法的参数，在HandlerMethod中
+    MethodParameter[] parameters = getMethodParameters();
+    // 用于保存解析出参数的值
+    Object[] args = new Object[parameters.length];
+    for (int i = 0; i < parameters.length; i++) {
+        MethodParameter parameter = parameters[i];
+        // 给parameter设置参数名解析器
+        parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
+        // 给parameter设置containingClass和parameterType
+        GenericTypeResolver.resolveParameterType(parameter, getBean().getClass());
+        // 如果相应类型的参数已经存在providedArgs，则直接设置到parameter中
+        args[i] = resolveProvidedArgument(parameter, providedArgs);
+        if (args[i] != null) {
+            continue;
+        }
+        // 使用argumentResolvers解析参数
+        if (this.argumentResolvers.supportsParameter(parameter)) {
+            try {
+                args[i] = this.argumentResolvers.resolveArgument(
+                        parameter, mavContainer, request, this.dataBinderFactory);
+                continue;
+            }
+            catch (Exception ex) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(getArgumentResolutionErrorMessage("Error resolving argument", i), ex);
+                }
+                throw ex;
+            }
+        }
+        // 如果没解析出参数，则抛出异常
+        if (args[i] == null) {
+            String msg = getArgumentResolutionErrorMessage("No suitable resolver for argument", i);
+            throw new IllegalStateException(msg);
+        }
+    }
+    return args;
+}
+```
 - ServletInvocableHandlerMethod
+>> ServletInvocableHandlerMethod继承自InvocableHandlerMethod，在父类的基础上添加了三个功能:1.对@ReponseStatus注释的支持；2对返回值的处理；3对异步处理结果的出差。
 
+>> @ReponseStatus注释用于处理器方法或返回值上，作用是对返回Response的Status进行设置，它有两个参数：value和reason，value是HttpStatus类型不能为空，reason是String类型表示错误的原因默认为空字符串。当一个方法注释了问@ResponseStatus后，返回的response会使用注释中的status，如果处理器返回值为空或者reson不为空，则将中断处理直接返回（不在渲染页面），实际用的不多。  
 
-#### 3.2.6 ServletInvocableHandlerMethod
+>> 对返回值的处理是使用returnValueHandlers属性完成的，它是HandlerMethodReturnValueHandlerComposite类型的。  
+
+>> ServletInvocableHandlerMethod处理请求的方法是
+```java
+public void invokeAndHandle(ServletWebRequest webRequest,
+        ModelAndViewContainer mavContainer, Object... providedArgs) throws Exception {
+    // 调用父类的invokeForRequest执行请求
+    Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+    // 处理@ResponseStatus注释
+    setResponseStatus(webRequest);
+    // 处理返回值
+    if (returnValue == null) {
+        if (isRequestNotModified(webRequest) || hasResponseStatus() || mavContainer.isRequestHandled()) {
+            mavContainer.setRequestHandled(true);
+            return;
+        }
+    }
+    else if (StringUtils.hasText(this.responseReason)) {
+        mavContainer.setRequestHandled(true);
+        return;
+    }
+    mavContainer.setRequestHandled(false);
+    try {
+        this.returnValueHandlers.handleReturnValue(
+                returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
+    }
+    catch (Exception ex) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+        }
+        throw ex;
+    }
+}
+
+private void setResponseStatus(ServletWebRequest webRequest) throws IOException {
+    // 判断返回值是否为空
+    if (this.responseStatus == null) {
+        return;
+    }
+    if (StringUtils.hasText(this.responseReason)) {
+        webRequest.getResponse().sendError(this.responseStatus.value(), this.responseReason);
+    }
+    else {
+        webRequest.getResponse().setStatus(this.responseStatus.value());
+    }
+    // 设置到request的属性，为了在redirect中使用
+    webRequest.getRequest().setAttribute(View.RESPONSE_STATUS_ATTRIBUTE, this.responseStatus);
+}
+
+```
+#### 3.2.6 HandlerMethodArgumentResolver
+>> HandlerMethodArgumentResolver是用来为处理器解析参数的，主要用在InvocableHandlerMethod中。每个Resolver对应一种类型的参数。这些实现类有一个比较特殊就是HandlerMethodArgumentResolverComposite，它不具体解析参数，而是将多个解析器包含在其中，这就是责任链模式。接口的定义：
+```java
+public interface HandlerMethodArgumentResolver {
+    // 判断是否可以解析传入的参数
+    boolean supportsParameter(MethodParameter parameter);
+    // 实际解析参数
+	Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception;
+}
+```
+>> HandlerMethodArgumentResolver的实现类有两种的命名方式，一种是XXXMethodArgumentResolver，另一种是XXXMethodProcessor。前一个是参数解析器，后者除了可以解析参数外还可以处理相应类型的返回值。还有个Adapter，它也不是解析参数的，而是用来兼容WebArgumentResolver类型的参数解析器的适配器。
+
+>> 下面分析解析Model类型参数的ModelMethodProcessor解析器和解析注释了@PathVariable的参数类型的PathVariableMethodArgumentResolver的解析器。
+- ModelMethodProcessor
+>> ModelMethodProcessor既可以解析参数也可以处理返回值，代码：
+```java
+public class ModelMethodProcessor implements HandlerMethodArgumentResolver, HandlerMethodReturnValueHandler {
+	// 判断如果是不是Model类型
+	public boolean supportsParameter(MethodParameter parameter) {
+		return Model.class.isAssignableFrom(parameter.getParameterType());
+	}
+	// 直接返回mavContainer的model。现在model已经保存一些值，所以在处理器中如果定义了Model类型的参数，给我们传的Model中可能已经保存的有值了。
+	public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+		return mavContainer.getModel();
+	}
+	@Override
+	public boolean supportsReturnType(MethodParameter returnType) {
+		return Model.class.isAssignableFrom(returnType.getParameterType());
+	}
+	@Override
+	public void handleReturnValue(Object returnValue, MethodParameter returnType,
+			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+		if (returnValue == null) {
+			return;
+		}
+		else if (returnValue instanceof Model) {
+			mavContainer.addAllAttributes(((Model) returnValue).asMap());
+		}
+		else {
+			// should not happen
+			throw new UnsupportedOperationException("Unexpected return type: " +
+					returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
+		}
+	}
+}
+```
+>> 这个实现非常简单，supportsParameter方法，resolveArgument方法是直接返回
+- PathVariableMethodArgumentResolver
+>> 
+#### 3.2.7 ServletInvocableHandlerMethod
