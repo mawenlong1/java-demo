@@ -2457,5 +2457,48 @@ public class ModelMethodProcessor implements HandlerMethodArgumentResolver, Hand
 ```
 >> 这个实现非常简单，supportsParameter方法，resolveArgument方法是直接返回
 - PathVariableMethodArgumentResolver
->> 
+>> PathVariableMethodArgumentResolver用于解析url中的路径，继承AbstractNamedValueMethodArgumentResolver这是一个处理nameValue类型参数的基类，cookie、requestParam、requestHeader、pathVariable等类型参数的解析器都继承自它。代码：
+```java
+public final Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+    NamedValueInfo namedValueInfo = getNamedValueInfo(parameter);
+    MethodParameter nestedParameter = parameter.nestedIfOptional();
+    Object resolvedName = resolveStringValue(namedValueInfo.name);
+    if (resolvedName == null) {
+        throw new IllegalArgumentException(
+                "Specified name must not resolve to null: [" + namedValueInfo.name + "]");
+    }
+    Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
+    if (arg == null) {
+        if (namedValueInfo.defaultValue != null) {
+            arg = resolveStringValue(namedValueInfo.defaultValue);
+        }
+        else if (namedValueInfo.required && !nestedParameter.isOptional()) {
+            handleMissingValue(namedValueInfo.name, nestedParameter, webRequest);
+        }
+        arg = handleNullValue(namedValueInfo.name, arg, nestedParameter.getNestedParameterType());
+    }
+    else if ("".equals(arg) && namedValueInfo.defaultValue != null) {
+        arg = resolveStringValue(namedValueInfo.defaultValue);
+    }
+    if (binderFactory != null) {
+        WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
+        try {
+            arg = binder.convertIfNecessary(arg, parameter.getParameterType(), parameter);
+        }
+        catch (ConversionNotSupportedException ex) {
+            throw new MethodArgumentConversionNotSupportedException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+        }
+        catch (TypeMismatchException ex) {
+            throw new MethodArgumentTypeMismatchException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+
+        }
+    }
+    handleResolvedValue(arg, namedValueInfo.name, parameter, mavContainer, webRequest);
+    return arg;
+}
+```
+
 #### 3.2.7 ServletInvocableHandlerMethod
