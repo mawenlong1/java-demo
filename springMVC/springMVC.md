@@ -2501,4 +2501,4 @@ public final Object resolveArgument(MethodParameter parameter, ModelAndViewConta
 }
 ```
 
-#### 3.2.7 ServletInvocableHandlerMethod
+#### 3.2.7 HandlerMethodReturnValue
