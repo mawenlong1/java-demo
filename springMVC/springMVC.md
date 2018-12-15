@@ -2604,4 +2604,124 @@ protected void handleResolvedValue(Object arg, String name, MethodParameter para
 ```
 >> 将解析出的PathVariable设置到request的属性中，方便使用。
 #### 3.2.7 HandlerMethodReturnValue
->> 
+>> HandlerMethodReturnValue用在ServletInvocableHandlerMethod中，作用是处理处理器执行后的返回值，主要有三个功能：1.将相应的参数设置到Model；2.设置view；3.如果请求已经处理完则设置ModelAndViewContainer的requestHandler为true。
+```java
+public interface HandlerMethodReturnValueHandler {
+	boolean supportsReturnType(MethodParameter returnType);
+	void handleReturnValue(Object returnValue, MethodParameter returnType,
+			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception;
+
+}
+```
+>> HandlerMethodReturnValue这个接口和HandlerMethodArgumentResolver非常相似，接口也是有两个方法一个用于判断是否支持，一个用于距离具体的返回值。实现类中也有一个特殊的实现类HandlerMethodReturnValueHandlerComposite它不处理返回值是使用内部封装的组件进行处理。
+>> 处理器的实现非常简单，这里分析使用最多的ViewNameMethodReturnValueHandler。代码：
+```java
+public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValueHandler {
+
+	private String[] redirectPatterns;
+	public void setRedirectPatterns(String... redirectPatterns) {
+		this.redirectPatterns = redirectPatterns;
+	}
+	public String[] getRedirectPatterns() {
+		return this.redirectPatterns;
+	}
+    // 判断返回值是否是void或者CharSequence类型，其中String是CharSequence的子类
+	@Override
+	public boolean supportsReturnType(MethodParameter returnType) {
+		Class<?> paramType = returnType.getParameterType();
+		return (void.class == paramType || CharSequence.class.isAssignableFrom(paramType));
+	}
+
+	@Override
+	public void handleReturnValue(Object returnValue, MethodParameter returnType,
+			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+        // 返回这是CharSequence类型
+		if (returnValue instanceof CharSequence) {
+			String viewName = returnValue.toString();
+			mavContainer.setViewName(viewName);
+            // 判断返回值是不是redirect类型
+			if (isRedirectViewName(viewName)) {
+				mavContainer.setRedirectModelScenario(true);
+			}
+		}
+		else if (returnValue != null){
+			// 因为只有void类型和CharSequence类型所以正常应该不会抛异常
+			throw new UnsupportedOperationException("Unexpected return type: " +
+					returnType.getParameterType().getName() + " in method: " + returnType.getMethod());
+		}
+	}
+	protected boolean isRedirectViewName(String viewName) {
+        // 先使用redirectPatterns判断是否匹配，如果不匹配在看是否是以redirect:开头的。
+		return (PatternMatchUtils.simpleMatch(this.redirectPatterns, viewName) || viewName.startsWith("redirect:"));
+	}
+
+}
+```
+### 3.3 ViewResolver
+>> ViewResolver的主要功能是根据视图名和locale解析出视图，主要做两件事：解析出使用的模板和视图类型。String MVC中的ViewResolver整体分为四大类：AbstractCachingViewResolver、BeanNameViewResolver、ContentNegotiatingViewResolver以及ViewResolverComposite，后三个类只有一个实现类，AbstractCachingViewResolver一家独大因为它是所有可以缓存解析过的视图的基类，而逻辑视图和视图的关系一般是不变的，所以不需要每次都重新解析，最好解析过一次就缓存。BeanNameViewResolver是使用逻辑视图作为beanName从SpringMVC容器中查找。
+>> ViewResolverComposite是封装了多个ViewResolver的容器，解析视图时遍历ViewResolver进行解析。这里的ViewResolverComposite除了遍历成员还进行了初始化。
+```java
+public class ViewResolverComposite implements ViewResolver, Ordered, InitializingBean,
+		ApplicationContextAware, ServletContextAware {
+	private final List<ViewResolver> viewResolvers = new ArrayList<ViewResolver>();
+	private int order = Ordered.LOWEST_PRECEDENCE;
+	public void setViewResolvers(List<ViewResolver> viewResolvers) {
+		this.viewResolvers.clear();
+		if (!CollectionUtils.isEmpty(viewResolvers)) {
+			this.viewResolvers.addAll(viewResolvers);
+		}
+	}
+	public List<ViewResolver> getViewResolvers() {
+		return Collections.unmodifiableList(this.viewResolvers);
+	}
+
+	public void setOrder(int order) {
+		this.order = order;
+	}
+
+	@Override
+	public int getOrder() {
+		return this.order;
+	}
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		for (ViewResolver viewResolver : this.viewResolvers) {
+			if (viewResolver instanceof ApplicationContextAware) {
+				((ApplicationContextAware)viewResolver).setApplicationContext(applicationContext);
+			}
+		}
+	}
+	@Override
+	public void setServletContext(ServletContext servletContext) {
+		for (ViewResolver viewResolver : this.viewResolvers) {
+			if (viewResolver instanceof ServletContextAware) {
+				((ServletContextAware)viewResolver).setServletContext(servletContext);
+			}
+		}
+	}
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		for (ViewResolver viewResolver : this.viewResolvers) {
+			if (viewResolver instanceof InitializingBean) {
+				((InitializingBean) viewResolver).afterPropertiesSet();
+			}
+		}
+	}
+	@Override
+	public View resolveViewName(String viewName, Locale locale) throws Exception {
+		for (ViewResolver viewResolver : this.viewResolvers) {
+			View view = viewResolver.resolveViewName(viewName, locale);
+			if (view != null) {
+				return view;
+			}
+		}
+		return null;
+	}
+
+}
+```
+![avatar](ViewResolver.png)
+#### 3.3.1 ContentNegotiatingViewResolver
+>> ContentNegotiatingViewResolver解析器的作用是在别的解析器解析的结果上添加了对MediaType和后缀的支持，MediaType就是媒体类型Content-Type。它对视图的解析不是自己完成的而是使用封装的ViewResolver完成的。过程是：首先遍历所封装的ViewResolver进行具体的解析视图，可能会解析出多个视图，然后在使用request获取Media-type也可能会有多个结果，最后对这两个结果进行匹配查找出最优的视图。
+
+#### 3.3.2 AbstractCachingViewResolver
