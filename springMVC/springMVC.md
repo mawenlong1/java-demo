@@ -2461,6 +2461,7 @@ public class ModelMethodProcessor implements HandlerMethodArgumentResolver, Hand
 ```java
 public final Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
         NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+    // 根据参数类型获取NamedValueInfo
     NamedValueInfo namedValueInfo = getNamedValueInfo(parameter);
     MethodParameter nestedParameter = parameter.nestedIfOptional();
     Object resolvedName = resolveStringValue(namedValueInfo.name);
@@ -2468,6 +2469,7 @@ public final Object resolveArgument(MethodParameter parameter, ModelAndViewConta
         throw new IllegalArgumentException(
                 "Specified name must not resolve to null: [" + namedValueInfo.name + "]");
     }
+    // 具体解析参数，模板方法，子类实现
     Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
     if (arg == null) {
         if (namedValueInfo.defaultValue != null) {
@@ -2481,6 +2483,7 @@ public final Object resolveArgument(MethodParameter parameter, ModelAndViewConta
     else if ("".equals(arg) && namedValueInfo.defaultValue != null) {
         arg = resolveStringValue(namedValueInfo.defaultValue);
     }
+    // 如果binderFactory不为空，则用它创建binder并转换解析出的参数
     if (binderFactory != null) {
         WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
         try {
@@ -2496,9 +2499,77 @@ public final Object resolveArgument(MethodParameter parameter, ModelAndViewConta
 
         }
     }
+    // 对解析出的参数进行后置处理
     handleResolvedValue(arg, namedValueInfo.name, parameter, mavContainer, webRequest);
     return arg;
 }
+protected static class NamedValueInfo {
+    // 参数名
+    private final String name;
+    // 是否必须
+    private final boolean required;
+    // 默认值
+    private final String defaultValue;
+    public NamedValueInfo(String name, boolean required, String defaultValue) {
+        this.name = name;
+        this.required = required;
+        this.defaultValue = defaultValue;
+    }
+}
 ```
-
+>> resolveArgument过程中所使用的方法。
+1. getNamedValueInfo方法根据参数类型获取NamedValueInfo，具体过程先从缓存中获取，如果获取不到则调用createNamedValueInfo方法，这是模板方法子类实现，创建出来后调用updateNamedValueInfo更新NamedValueInfo最后保存到缓存中。updateNamedValueInfo方法具体有两个功能：1.如果name为空则使用parmeter的name。2.如果默认值是代表没有ValueConstants.DEFAULT_NONE类型设置为null；
+```java
+private NamedValueInfo getNamedValueInfo(MethodParameter parameter) {
+    NamedValueInfo namedValueInfo = this.namedValueInfoCache.get(parameter);
+    if (namedValueInfo == null) {
+        namedValueInfo = createNamedValueInfo(parameter);
+        namedValueInfo = updateNamedValueInfo(parameter, namedValueInfo);
+        this.namedValueInfoCache.put(parameter, namedValueInfo);
+    }
+    return namedValueInfo;
+}
+private NamedValueInfo updateNamedValueInfo(MethodParameter parameter, NamedValueInfo info) {
+    String name = info.name;
+    if (info.name.length() == 0) {
+        name = parameter.getParameterName();
+        if (name == null) {
+            throw new IllegalArgumentException(
+                    "Name for argument type [" + parameter.getNestedParameterType().getName() +
+                    "] not available, and parameter name information not found in class file either.");
+        }
+    }
+    String defaultValue = (ValueConstants.DEFAULT_NONE.equals(info.defaultValue) ? null : info.defaultValue);
+    return new NamedValueInfo(name, info.required, defaultValue);
+}
+```
+>> createNamedValueInfo在子类PathVariableMethodArgumentResolver的实现是根据@PathVariable注释创建的，这里使用了继承自NameValueInfo的内部类PathVariableNamedValueInfo，在PathVariableNamedValueInfo的构造方法里使用@PathVariable注释的value创建NameValueInfo代码：
+```java
+protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+    PathVariable annotation = parameter.getParameterAnnotation(PathVariable.class);
+    return new PathVariableNamedValueInfo(annotation);
+}
+private static class PathVariableNamedValueInfo extends NamedValueInfo {
+    public PathVariableNamedValueInfo(PathVariable annotation) {
+        super(annotation.name(), annotation.required(), ValueConstants.DEFAULT_NONE);
+    }
+}
+```
+2. resolveName,这个方法用于具体解析参数，是个模板方法，PathVariableMethodArgumentResolver的实现如下：
+```java
+protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest request) throws Exception {
+    Map<String, String> uriTemplateVars = (Map<String, String>) request.getAttribute(
+            HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
+    return (uriTemplateVars != null ? uriTemplateVars.get(name) : null);
+}
+```
+>> 这里直接就是从request里面获取HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE属性的值，这个值是在RequestMappingInfoHandlerMapping中的handlerMatch中设置的，也就是在HandlerMapping中根据lookuppath找到处理请求的处理器后设置的。
+3. resolveStringValue，这个方法是根据NameValueInfo的defaultValue设置默认值的。
+4. handleMissingValue，如果参数是必须存在，也就是NameValueInfo的required为true，但是没有解析出参数，而且没有默认值，就会调用，这也是模板方法,PathVariableMethodArgumentResolver的实现是直接抛出异常。
+```java
+protected void handleMissingValue(String name, MethodParameter parameter) throws ServletException {
+    throw new ServletRequestBindingException("Missing argument '" + name +
+            "' for method parameter of type " + parameter.getNestedParameterType().getSimpleName());
+}
+```
 #### 3.2.7 HandlerMethodReturnValue
