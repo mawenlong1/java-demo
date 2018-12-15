@@ -2572,4 +2572,36 @@ protected void handleMissingValue(String name, MethodParameter parameter) throws
             "' for method parameter of type " + parameter.getNestedParameterType().getSimpleName());
 }
 ```
+5. handleNullValue，如果解析结果为null，而且也没有默认值，并且handleMassingValue没调用或者调用了但是没有抛异常的情况下才会执行。
+```java
+private Object handleNullValue(String name, Object value, Class<?> paramType) {
+    if (value == null) {
+        if (Boolean.TYPE.equals(paramType)) {
+            return Boolean.FALSE;
+        }
+        else if (paramType.isPrimitive()) {
+            throw new IllegalStateException("Optional " + paramType.getSimpleName() + " parameter '" + name +
+                    "' is present but cannot be translated into a null value due to being declared as a " +
+                    "primitive type. Consider declaring it as object wrapper for the corresponding primitive type.");
+        }
+    }
+    return value;
+}
+```
+6. handleResolvedValue,用于处理解析出的参数值，是模板方法，子类PathVariableMethodArgumentResolver的实现：
+```java
+protected void handleResolvedValue(Object arg, String name, MethodParameter parameter,
+        ModelAndViewContainer mavContainer, NativeWebRequest request) {
+    String key = View.PATH_VARIABLES;
+    int scope = RequestAttributes.SCOPE_REQUEST;
+    Map<String, Object> pathVars = (Map<String, Object>) request.getAttribute(key, scope);
+    if (pathVars == null) {
+        pathVars = new HashMap<String, Object>();
+        request.setAttribute(key, pathVars, scope);
+    }
+    pathVars.put(name, arg);
+}
+```
+>> 将解析出的PathVariable设置到request的属性中，方便使用。
 #### 3.2.7 HandlerMethodReturnValue
+>> 
