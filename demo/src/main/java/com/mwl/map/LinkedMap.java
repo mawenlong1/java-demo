@@ -21,7 +21,7 @@ public class LinkedMap {
                 }
             }
         };
-        Map<String, String> test1 = new HashMap<>();
+        Map<String, String> test1 = new LinkedHashMap<>();
         for (int i = 0; i < 1000000; i++) {
             test.put("key=" + i, "value=" + i);
             test1.put("key=" + i, "value=" + i);
