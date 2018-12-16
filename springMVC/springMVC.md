@@ -2723,5 +2723,253 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 ![avatar](ViewResolver.png)
 #### 3.3.1 ContentNegotiatingViewResolver
 >> ContentNegotiatingViewResolver解析器的作用是在别的解析器解析的结果上添加了对MediaType和后缀的支持，MediaType就是媒体类型Content-Type。它对视图的解析不是自己完成的而是使用封装的ViewResolver完成的。过程是：首先遍历所封装的ViewResolver进行具体的解析视图，可能会解析出多个视图，然后在使用request获取Media-type也可能会有多个结果，最后对这两个结果进行匹配查找出最优的视图。
+>> ContentNegotiatingViewResolver是使用ViewResolver进行解析的，ViewResolver有两种初始化方法，一种是手动设置，另外一种是如果没有设置则自动获取spring容器中除它自己外的所有ViewResolvers。
+```java
+@Override
+protected void initServletContext(ServletContext servletContext) {
+    // 从spring容器中获取ViewResolver类型的bean
+    Collection<ViewResolver> matchingBeans =
+            BeanFactoryUtils.beansOfTypeIncludingAncestors(getApplicationContext(), ViewResolver.class).values();
+    // 如果没有手动注册则将容器中找到的ViewResolver设置给viewResolvers
+    if (this.viewResolvers == null) {
+        this.viewResolvers = new ArrayList<ViewResolver>(matchingBeans.size());
+        for (ViewResolver viewResolver : matchingBeans) {
+            if (this != viewResolver) {
+                this.viewResolvers.add(viewResolver);
+            }
+        }
+    }
+    else {
+        // 如果手动注册并且在容器中不存在，则进行初始化
+        for (int i = 0; i < viewResolvers.size(); i++) {
+            if (matchingBeans.contains(viewResolvers.get(i))) {
+                continue;
+            }
+            String name = viewResolvers.get(i).getClass().getName() + i;
+            getApplicationContext().getAutowireCapableBeanFactory().initializeBean(viewResolvers.get(i), name);
+        }
 
+    }
+    if (this.viewResolvers.isEmpty()) {
+        logger.warn("Did not find any ViewResolvers to delegate to; please configure them using the " +
+                "'viewResolvers' property on the ContentNegotiatingViewResolver");
+    }
+    AnnotationAwareOrderComparator.sort(this.viewResolvers);
+    this.cnmFactoryBean.setServletContext(servletContext);
+}
+```
+>> 解析视图的过程：
+```java
+public View resolveViewName(String viewName, Locale locale) throws Exception {
+    // 使用RequestContextHolder获取RequestAttributes进而获取request
+    RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
+    Assert.isInstanceOf(ServletRequestAttributes.class, attrs);
+    // 1.通过request获取MediaType
+    List<MediaType> requestedMediaTypes = getMediaTypes(((ServletRequestAttributes) attrs).getRequest());
+    if (requestedMediaTypes != null) {
+        //2. 获取所有候选视图，内部通过遍历封装的viewResolvers来解析
+        List<View> candidateViews = getCandidateViews(viewName, locale, requestedMediaTypes);
+        // 3.从多个候选视图中找出最佳视图 
+        View bestView = getBestView(candidateViews, requestedMediaTypes, attrs);
+        if (bestView != null) {
+            return bestView;
+        }
+    }
+    if (this.useNotAcceptableStatusCode) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("No acceptable view found; returning 406 (Not Acceptable) status code");
+        }
+        return NOT_ACCEPTABLE_VIEW;
+    }
+    else {
+        logger.debug("No acceptable view found; returning null");
+        return null;
+    }
+}
+```
+>> getCandidateViews获取候选视图的方法：
+```java
+private List<View> getCandidateViews(String viewName, Locale locale, List<MediaType> requestedMediaTypes)
+        throws Exception {
+    List<View> candidateViews = new ArrayList<View>();
+    // 遍历viewResolvers
+    for (ViewResolver viewResolver : this.viewResolvers) {
+        View view = viewResolver.resolveViewName(viewName, locale);
+        if (view != null) {
+            candidateViews.add(view);
+        }
+        // 遍历requestedMediaTypes获取到后缀然后添加到逻辑视图后作为新视图名进行解析
+        for (MediaType requestedMediaType : requestedMediaTypes) {
+            List<String> extensions = this.contentNegotiationManager.resolveFileExtensions(requestedMediaType);
+            for (String extension : extensions) {
+                String viewNameWithExtension = viewName + '.' + extension;
+                view = viewResolver.resolveViewName(viewNameWithExtension, locale);
+                if (view != null) {
+                    candidateViews.add(view);
+                }
+            }
+        }
+    }
+    if (!CollectionUtils.isEmpty(this.defaultViews)) {
+        candidateViews.addAll(this.defaultViews);
+    }
+    return candidateViews;
+}
+```
+>> 解析出候选视图中的最佳视图getBestView方法：
+```java
+private View getBestView(List<View> candidateViews, List<MediaType> requestedMediaTypes, RequestAttributes attrs) {
+    // 判断候选视图中有没有redirect视图，如果有直接返回
+    for (View candidateView : candidateViews) {
+        if (candidateView instanceof SmartView) {
+            SmartView smartView = (SmartView) candidateView;
+            if (smartView.isRedirectView()) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Returning redirect view [" + candidateView + "]");
+                }
+                return candidateView;
+            }
+        }
+    }
+    for (MediaType mediaType : requestedMediaTypes) {
+        for (View candidateView : candidateViews) {
+            if (StringUtils.hasText(candidateView.getContentType())) {
+                // 根据候选视图获取对应的MediaType
+                MediaType candidateContentType = MediaType.parseMediaType(candidateView.getContentType());
+                // 判断当前MediaType是否支持从候选视图获取的对应的MediaType，如：text/*可以支持text/html
+                if (mediaType.isCompatibleWith(candidateContentType)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Returning [" + candidateView + "] based on requested media type '" +
+                                mediaType + "'");
+                    }
+                    // 将所用的mediaType添加到request的Attribute
+                    attrs.setAttribute(View.SELECTED_CONTENT_TYPE, mediaType, RequestAttributes.SCOPE_REQUEST);
+                    return candidateView;
+                }
+            }
+        }
+    }
+    return null;
+}
+```
 #### 3.3.2 AbstractCachingViewResolver
+>> AbstractCachingViewResolver提供了统一的缓存功能，当视图解析过一次就被缓存起来。
+>> 它的直接继承类有三个：ResourceBundleViewResolver、XmlViewResolver和UrlBasedViewResolver,第一个是通过使用properties属性配置文件解析视图的；第二个和第一个相似只不过它是通过xml配置文件；第三个是所有直接将逻辑视图最为url查找模板文件ViewResolver的基类，它设置了统一查找模板的规则，每个子类对应一个视图类型。
+>> 前两个解析器的实现原理，都是根据locale将相应的配置文件初始化到beanFactory，然后直接将逻辑视图作为beanName到factory里查找就行。
+```java
+protected View loadView(String viewName, Locale locale) throws Exception {
+    BeanFactory factory = initFactory(locale);
+    try {
+        return factory.getBean(viewName, View.class);
+    }
+    catch (NoSuchBeanDefinitionException ex) {
+        // Allow for ViewResolver chaining...
+        return null;
+    }
+}
+```
+>> AbstractCachingViewResolver中解析视图的过程：
+```java
+public View resolveViewName(String viewName, Locale locale) throws Exception {
+    if (!isCache()) {
+        // 实际创建视图
+        return createView(viewName, locale);
+    }
+    else {
+        Object cacheKey = getCacheKey(viewName, locale);
+        View view = this.viewAccessCache.get(cacheKey);
+        if (view == null) {
+            synchronized (this.viewCreationCache) {
+                view = this.viewCreationCache.get(cacheKey);
+                if (view == null) {
+                    // 实际创建视图，调用loadView，loadView是个模板方法子类实现
+                    view = createView(viewName, locale);
+                    if (view == null && this.cacheUnresolved) {
+                        view = UNRESOLVED_VIEW;
+                    }
+                    if (view != null) {
+                        this.viewAccessCache.put(cacheKey, view);
+                        this.viewCreationCache.put(cacheKey, view);
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Cached view [" + cacheKey + "]");
+                        }
+                    }
+                }
+            }
+        }
+        return (view != UNRESOLVED_VIEW ? view : null);
+    }
+}
+```
+>> AbstractCachingViewResolver中有一个成员变量cacheLimit，用来设置最大缓存，设置为0时表示不启用缓存。
+>> AbstractCachingViewResolver中使用了两个Map做缓存，它们分别是viewAccessCache和viewCreationCache，前者是ConcurrentHashMap类型，它内部使用了细粒度的锁，支持并发方法，效率高而后者主要提供限制缓存最大数的功能，效率不如前者。获取缓存从前者获取而添加缓存会给两者同时添加后者如果发现缓存数量已经达到上限会删除自己最前面的同时也删除前者对应的缓存。
+- UrlBasedViewResolver
+>> UrlBasedViewResolver里面重写了父类的getCacheKey、createView和loadView三个方法。
+>> getCacheKey方法直接返回viewName，它用于父类AbstractCachingViewResolver中设置缓存的key，原来（AbstractCachingViewResolver）使用的是viewName+“_”+locale,因此此类不支持locale
+>> createView中首先检查是否可以解析传入的逻辑视图，如果不可以直接返回null让别的解析器解析，接着分别检查是不是redirect
+```java
+protected View createView(String viewName, Locale locale) throws Exception {
+    // 检查是否支持此逻辑视图，可以配置支持的模板
+    if (!canHandle(viewName, locale)) {
+        return null;
+    }
+    // 检查是不是redirect视图
+    if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
+        String redirectUrl = viewName.substring(REDIRECT_URL_PREFIX.length());
+        RedirectView view = new RedirectView(redirectUrl, isRedirectContextRelative(), isRedirectHttp10Compatible());
+        view.setHosts(getRedirectHosts());
+        return applyLifecycleMethods(viewName, view);
+    }
+    // 检查是不是forward视图
+    if (viewName.startsWith(FORWARD_URL_PREFIX)) {
+        String forwardUrl = viewName.substring(FORWARD_URL_PREFIX.length());
+        return new InternalResourceView(forwardUrl);
+    }
+    // 如果都是不调用父类createView
+    return super.createView(viewName, locale);
+}
+```
+>> loadView方法代码：
+```java
+protected View loadView(String viewName, Locale locale) throws Exception {
+    // 使用buildView方法创建view
+    AbstractUrlBasedView view = buildView(viewName);
+    // 使用applyLifecycleMethods方法对创建的View初始化
+    View result = applyLifecycleMethods(viewName, view);
+    // 检查view对应的模板是否存在
+    return (view.checkResource(locale) ? result : null);
+}
+// 通过容器获取到factory然后实现
+private View applyLifecycleMethods(String viewName, AbstractView view) {
+    return (View) getApplicationContext().getAutowireCapableBeanFactory().initializeBean(view, viewName);
+}
+```
+>> buildView用于具体创建View
+```java
+protected AbstractUrlBasedView buildView(String viewName) throws Exception {
+    AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(getViewClass());
+    view.setUrl(getPrefix() + viewName + getSuffix());
+
+    String contentType = getContentType();
+    if (contentType != null) {
+        view.setContentType(contentType);
+    }
+
+    view.setRequestContextAttribute(getRequestContextAttribute());
+    view.setAttributesMap(getAttributesMap());
+
+    Boolean exposePathVariables = getExposePathVariables();
+    if (exposePathVariables != null) {
+        view.setExposePathVariables(exposePathVariables);
+    }
+    Boolean exposeContextBeansAsAttributes = getExposeContextBeansAsAttributes();
+    if (exposeContextBeansAsAttributes != null) {
+        view.setExposeContextBeansAsAttributes(exposeContextBeansAsAttributes);
+    }
+    String[] exposedContextBeanNames = getExposedContextBeanNames();
+    if (exposedContextBeanNames != null) {
+        view.setExposedContextBeanNames(exposedContextBeanNames);
+    }
+    return view;
+}
+```
