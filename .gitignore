@@ -17,3 +17,4 @@ target
 /spring-boot-docker/.gitignore
 /spring-boot-docker/mvnw.cmd
 /spring-boot-docker/mvnw
+*.jar
