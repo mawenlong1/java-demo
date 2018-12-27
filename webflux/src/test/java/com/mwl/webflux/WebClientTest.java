@@ -57,7 +57,7 @@ public class WebClientTest {
         Flux<MyEvent> eventFlux = Flux.interval(Duration.ofSeconds(1))
                                       .map(l -> new MyEvent(System.currentTimeMillis(), "message-" + l))
                                       .take(50);
-        WebClient webClient = WebClient.create("http://localhost:8080");
+        WebClient webClient = WebClient.create("http://localhost:7070");
         webClient
                 .post().uri("/events")
                 .contentType(MediaType.APPLICATION_STREAM_JSON)

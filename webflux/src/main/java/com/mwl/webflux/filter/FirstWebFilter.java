@@ -12,10 +12,13 @@ import reactor.core.publisher.Mono;
  */
 @Component
 public class FirstWebFilter implements WebFilter {
+
+    private volatile int count=0;
     @Override
     public Mono<Void> filter(ServerWebExchange serverWebExchange, WebFilterChain webFilterChain) {
         serverWebExchange.getAttributes().put("User", "jerry");
-        System.out.println("=====拦截器=====");
+        count++;
+        System.out.println("=====拦截器====="+count);
         return webFilterChain.filter(serverWebExchange);
     }
 }

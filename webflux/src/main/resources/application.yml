@@ -1,4 +1,6 @@
 spring:
   data:
     mongodb:
-      host: 192.168.99.100
+      host: 111.231.228.108
+server:
+  port: 27017

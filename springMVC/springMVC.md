@@ -2950,6 +2950,7 @@ protected AbstractUrlBasedView buildView(String viewName) throws Exception {
     AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(getViewClass());
     view.setUrl(getPrefix() + viewName + getSuffix());
 
+    // 如果contentType不为空，将其设置给view
     String contentType = getContentType();
     if (contentType != null) {
         view.setContentType(contentType);
@@ -2957,15 +2958,17 @@ protected AbstractUrlBasedView buildView(String viewName) throws Exception {
 
     view.setRequestContextAttribute(getRequestContextAttribute());
     view.setAttributesMap(getAttributesMap());
-
+    // exposePathVariables不为空设置为view，它用于标示是否让view使用PathVariable，可以在ViewResolver中配置。PathVariables就是@PathVariables注释的参数
     Boolean exposePathVariables = getExposePathVariables();
     if (exposePathVariables != null) {
         view.setExposePathVariables(exposePathVariables);
     }
+    // 设置exposeContextBeansAsAttributes，标示是否可以让view使用容器中注册的bean，可以在ViewResolver中配置。
     Boolean exposeContextBeansAsAttributes = getExposeContextBeansAsAttributes();
     if (exposeContextBeansAsAttributes != null) {
         view.setExposeContextBeansAsAttributes(exposeContextBeansAsAttributes);
     }
+    // 设置exposedContextBeanNames，配置view可以使用容器中的哪些bean，可以在ViewResolver中配置。
     String[] exposedContextBeanNames = getExposedContextBeanNames();
     if (exposedContextBeanNames != null) {
         view.setExposedContextBeanNames(exposedContextBeanNames);
@@ -2973,3 +2976,55 @@ protected AbstractUrlBasedView buildView(String viewName) throws Exception {
     return view;
 }
 ```
+使用BeanUtils根据getViewClass方法的返回值创建出view，然后给viewName加上前缀和后缀，下面就是设置一些参数。getViewClass返回其中的viewClass属性，代表View的视图类型，设置视图的setViewClass方法：
+```java
+public void setViewClass(@Nullable Class<?> viewClass) {
+    if (viewClass != null && !requiredViewClass().isAssignableFrom(viewClass)) {
+        throw new IllegalArgumentException("Given view class [" + viewClass.getName() +
+                "] is not of type [" + requiredViewClass().getName() + "]");
+    }
+    this.viewClass = viewClass;
+}
+```
+
+InternalResourceViewResolver直接继承自UrlBasedViewResolver，它在构造方法中设置viewClass，在buildView中对父类创建的View设置了一些属性，requiredViewClass方法返回InternalResourceView类型，代码：
+```java
+public InternalResourceViewResolver() {
+    Class<?> viewClass = requiredViewClass();
+    if (InternalResourceView.class == viewClass && jstlPresent) {
+        viewClass = JstlView.class;
+    }
+    setViewClass(viewClass);
+}
+
+@Override
+protected Class<?> requiredViewClass() {
+    return InternalResourceView.class;
+}
+@Override
+protected AbstractUrlBasedView buildView(String viewName) throws Exception {
+    InternalResourceView view = (InternalResourceView) super.buildView(viewName);
+    if (this.alwaysInclude != null) {
+        view.setAlwaysInclude(this.alwaysInclude);
+    }
+    view.setPreventDispatchLoop(true);
+    return view;
+}
+```
+buildView方法给view设置alwaysInclude用于标识是否可以使用forward的情况下强制使用include。
+
+FreeMarkerViewResolver继承AbstractTemplateViewResolver，buildView主要设置一些属性。
+```java
+@Override
+protected AbstractUrlBasedView buildView(String viewName) throws Exception {
+    AbstractTemplateView view = (AbstractTemplateView) super.buildView(viewName);
+    view.setExposeRequestAttributes(this.exposeRequestAttributes);
+    view.setAllowRequestOverride(this.allowRequestOverride);
+    view.setExposeSessionAttributes(this.exposeSessionAttributes);
+    view.setAllowSessionOverride(this.allowSessionOverride);
+    view.setExposeSpringMacroHelpers(this.exposeSpringMacroHelpers);
+    return view;
+}
+```
+
+### 3.4 ViewResolver
