@@ -1,0 +1,2 @@
+com.mwl.spi.MongoRepository
+com.mwl.spi.MysqlRepository
