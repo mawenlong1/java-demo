@@ -1,6 +1,5 @@
 package com.mwl.map;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -8,6 +7,20 @@ import java.util.Map;
 /**
  * @author mawenlong
  * @date 2018/12/16
+ * <p>
+ * LinkedHashMap的应用：1.LRU缓存。
+ * <p>
+ * 例子：AbstractCachingViewResolver，使用了LinkedHashMap做LRU缓存并且限制了缓存的最大数量。
+ * <p>
+ * 该类使用了两个map做缓存 另一个map的类型是ConcurrentHashMap，内部使用了细粒度的锁，支持并发方法，效率高。Linked这主要是限制缓存的最大数量。
+ * <p>
+ * 使用的时候从ConcurrentHashMap中获取，添加的时候两者同时添加，如果缓存数量超过最大值会按照LRU进行删除（都删除）。
+ * <p>
+ * 在外部进行创建和删除缓存的时候需要进行加锁。
+ * <p>
+ * AbstractCachingViewResolver这样使用优点是可以支持并发的访问，但是在并发的添加的时候效率会降低
+ * <p>
+ * 另外dubbo也使用了LinkedHashMap做LRU缓存，但是没有使用ConcurrentHashMap，而是使用了重入锁在增删改查的时候进行加锁。
  */
 public class LinkedMap {
     public static void main(String[] args) {
