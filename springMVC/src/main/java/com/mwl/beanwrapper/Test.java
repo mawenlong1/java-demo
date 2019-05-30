@@ -13,6 +13,5 @@ public class Test {
         System.out.println(user);
         beanWrapper.setPropertyValue("name","李四");
         System.out.println(user);
-
     }
 }
