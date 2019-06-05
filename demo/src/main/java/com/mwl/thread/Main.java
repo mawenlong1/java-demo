@@ -24,7 +24,6 @@ public class Main {
         });
         thread.setName("偶数线程");
 
-
         Thread thread1 = new Thread(() -> {
             while (num < 100) {
                 if ((num & 1) == 1) {
@@ -38,8 +37,6 @@ public class Main {
         thread1.setName("奇数线程");
         thread.start();
         thread1.start();
-
-//        TimeUnit.SECONDS.sleep(1000);
 
     }
 }
