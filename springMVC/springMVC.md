@@ -83,10 +83,8 @@ public abstract class GenericServlet implements javax.servlet.Servlet, ServletCo
      */
     public GenericServlet() {
     }
-
     public void destroy() {
     }
-
     /**
      * 获取init-param配置的参数,调用ServletConfig里的方法
      */
@@ -96,7 +94,6 @@ public abstract class GenericServlet implements javax.servlet.Servlet, ServletCo
             throw new IllegalStateException(
                     lStrings.getString("err.servlet_config_not_initialized"));
         }
-
         return sc.getInitParameter(name);
     }
 
@@ -182,11 +179,10 @@ public abstract class GenericServlet implements javax.servlet.Servlet, ServletCo
 ```
 ### 1.3HttpServlet
 HttpServlet是用于Http协议实现的Servlet的基类。重写类service方法，将ServletResopnse与ServletRequest转换为HttpServletResopnse与HttpServletRequest，然后根据Http请求类型的不同调用不同的方法
-```java
-@Override
+``` java
+
 public void service(ServletRequest req, ServletResponse res)
-        throws ServletException, IOException
-{
+        throws ServletException, IOException{
     HttpServletRequest  request;
     HttpServletResponse response;
     //如果请求类型不相符，则抛出异常
@@ -253,7 +249,6 @@ HttpServlet将不同请求路由的不同方法,而SpringMVC中有将请求合�
 
 ```java 
 
-@Override
 public final void init() throws ServletException {
     if (logger.isDebugEnabled()) {
         logger.debug("Initializing servlet '" + getServletName() + "'");
@@ -287,8 +282,8 @@ public final void init() throws ServletException {
 BeanWrapper是Spring提供的一个可以操作javaBean的工具，可以直接修改javaBean的属性值。
 ### 1.5 FrameworkServlet
 从HttpServletBean知，FrameworkServlet的入口方法为initServletBean()。
-```java
-@Override
+``` java
+
 protected final void initServletBean() throws ServletException {
     getServletContext().log("Initializing Spring FrameworkServlet '" + getServletName() + "'");
     if (this.logger.isInfoEnabled()) {
@@ -319,7 +314,7 @@ protected final void initServletBean() throws ServletException {
 }
 ```
 FrameworkServlet的构建过程主要就是初始化webApplicationContext().
-```java
+``` java
 protected WebApplicationContext initWebApplicationContext() {
     // 获取rootContext
     WebApplicationContext rootContext =
@@ -449,7 +444,7 @@ protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicati
 }
 ```
 wac添加了监听器
-```java
+``` java
 // 添加ContextRefreshListener监听
 wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
 ```
@@ -477,7 +472,7 @@ protected void initStrategies(ApplicationContext context) {
 }
 ```
 initStrategies方法主要就是初始化九个组件，以initLocaleResolver为例
-```java
+``` java
 private void initLocaleResolver(ApplicationContext context) {
     try {
         // 在容器内查找localeResolver
@@ -497,7 +492,7 @@ private void initLocaleResolver(ApplicationContext context) {
 }
 ```
 默认组件获取
-```java
+``` java
 protected <T> T getDefaultStrategy(ApplicationContext context, Class<T> strategyInterface) {
     List<T> strategies = getDefaultStrategies(context, strategyInterface);
     if (strategies.size() != 1) {
@@ -540,7 +535,7 @@ protected <T> List<T> getDefaultStrategies(ApplicationContext context, Class<T> 
 }
 ```
 defaultStrategies的初始化在一个静态代码块
-```java
+``` java
 static {
     // Load default strategy implementations from properties file.
     // This is currently strictly internal and not meant to be customized
@@ -561,7 +556,7 @@ defaultStrategie是DispatchServlet类所在包下的DispatcherServlet.properties
 没有处理请求的工作
 ### 2.2 FrameworkServlet
 >> 在FrameworkServlet中重写了service，doGet、doPost、doPut、doDelete、doOptions、doTrace方法（除了doHead）。在Service中添加了PATCH类型请求的处理。doOptions和doTrace方法可以通过参数决定是自己处理还是交给父类处理。其他的请求都是交给processRequest统一处理。service和doGet方法代码：
-```java
+``` java
 protected void service(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
     HttpMethod httpMethod = HttpMethod.resolve(request.getMethod());
@@ -579,7 +574,7 @@ protected final void doGet(HttpServletRequest request, HttpServletResponse respo
 }
 ```
 processRequest方法是FrameworkServlet类中在处理请求的核心：
-```java
+``` java
 protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
     long startTime = System.currentTimeMillis();
@@ -641,8 +636,8 @@ processRequest方法主要做了两件事：
 - LocaleContext与RequestAttributes的设置与恢复
     - LocaleContext存放本地化信息Locale（如zh-cn）
     - RequestAttributes通过它可以set/get/remove Attribute,根据参数判断操作request还是session
-    ```java
-    @Override
+    ``` java
+   
     public void setAttribute(String name, Object value, int scope) {
         if (scope == SCOPE_REQUEST) {
             // 当调用requestCompleted方法后就会变为false不能再操作了
@@ -660,7 +655,7 @@ processRequest方法主要做了两件事：
     }
     ```
     - LocaleContextHolder是抽象类，里面的方法都是statis的
-    ```java
+    ``` java
     public abstract class LocaleContextHolder {
 	private static final ThreadLocal<LocaleContext> localeContextHolder =
 			new NamedThreadLocal<LocaleContext>("LocaleContext");
@@ -669,7 +664,7 @@ processRequest方法主要做了两件事：
     }
     ```
 - 处理完发布ServletRequestHandledEvent消息
-```java
+``` java
 private void publishRequestHandledEvent(
         HttpServletRequest request, HttpServletResponse response, long startTime, Throwable failureCause) {
     // publishEvents可以在配置Servlet时配置，默认为true
@@ -699,7 +694,7 @@ public class ServletRequestHandledEventListener implements ApplicationListener<S
 ### 2.3 DispatcherServlet
 >> DispatcherServlet里面执行处理的入口方法doService。doService并没有直接进行处理而是交给doDispatch进行具体处理。在进行doDispatch处理前首先判断是不是include请求，如果是则对request的Attribute做快照备份。doDispatch处理完成后进行还原。
 
-```java
+``` java
 @Override
 protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
     if (logger.isDebugEnabled()) {
@@ -748,14 +743,14 @@ protected void doService(HttpServletRequest request, HttpServletResponse respons
 }
 ```
 >> doDispatch的任务：1.根据request找到Handler；2.根据Handler找到HandlerAdapter；3.用HandlerAdapter处理Handler；4.调用processDispatchResult方法处理上面处理之后的结果。
-```java
+``` java
 mappedHandler = getHandler(processedRequest);
 HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 ```
 ### 2.4 doDispatch方法
-```java
+``` java
 protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
     HttpServletRequest processedRequest = request;
     HandlerExecutionChain mappedHandler = null;
@@ -850,7 +845,7 @@ protected void doDispatch(HttpServletRequest request, HttpServletResponse respon
 - Exception dispatchException：处理请求过程中的异常
 >> 首先判断是否是上传请求如果是将request转换为multipartRequestParsed（HttpServletRequest的子类）。
 >> 然后通过getHandler获取Handler处理器链，其中使用带了HandlerMapping，返回值HandlerExecutionChain,包含与当前request匹配的Interceptor和Handler
-```java
+``` java
 protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
     for (HandlerMapping hm : this.handlerMappings) {
         if (logger.isTraceEnabled()) {
@@ -877,7 +872,7 @@ protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Ex
 >> AbstractHandlerMapping采用模板模式，获取Handler过程通过模板方法getHandlerInternal交给子类。AbstractHandlerMapping中保存了所有配置的interceptors，然后Handler可以根据从reqeust提取的lookupPath将相应的interceptors装配上去。此类的主要作用是设置拦截器。
 ##### 初始化
 >> AbstractHandlerMapping继承WebApplicationObjectSupport，初始化的时候会调用模板方法initApplicationContext方法
-```java
+``` java
 protected void initApplicationContext() throws BeansException {
     extendInterceptors(this.interceptors);
     detectMappedInterceptors(this.adaptedInterceptors);
@@ -886,7 +881,7 @@ protected void initApplicationContext() throws BeansException {
 ```
    1. extendInterceptors是模板方法，用于子类提供一个添加（或修改）interceptors的入口
    2. detectMappedInterceptors方法用于将SpringMVC容器及父容器的所有MappedInterceptor类型的Bean添加到mappedInterceptors属性。  
-```java
+``` java
 protected void detectMappedInterceptors(List<HandlerInterceptor> mappedInterceptors) {
     mappedInterceptors.addAll(
             BeanFactoryUtils.beansOfTypeIncludingAncestors(
@@ -894,7 +889,7 @@ protected void detectMappedInterceptors(List<HandlerInterceptor> mappedIntercept
 }
 ```    
 3. initInterceptors方法是初始化interceptors.将所有interceptor添加到adaptedInterceptors属性里面
-```java
+``` java
 protected void initInterceptors() {
     if (!this.interceptors.isEmpty()) {
         for (int i = 0; i < this.interceptors.size(); i++) {
@@ -913,7 +908,7 @@ protected void initInterceptors() {
 - adaptedInterceptors不需要匹配全部添加。
 ##### 使用
 HandlerMapping通过getHandler方法来获取处理器Handler以及拦截器Interceptor。
-```java
+``` java
 public final HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
     // 获取handler，子类实现
     Object handler = getHandlerInternal(request);
@@ -941,7 +936,7 @@ public final HandlerExecutionChain getHandler(HttpServletRequest request) throws
 ```
 - 获取handler：通过模板方法getHandlerInternal获取，如果没有获取默认Handler，如果Handler是String类型这在容器内查找bean
 - 添加拦截器getHandlerExecutionChain方法。代码：
-```java
+``` java
 protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpServletRequest request) {
     // 创建变量
     HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
@@ -966,7 +961,7 @@ protected HandlerExecutionChain getHandlerExecutionChain(Object handler, HttpSer
 ```
 #### 3.1.2 AbstractUrlHandlerMapping
 >> 将url与对应的Handler保存在一个map中,在getHandlerInternal方法中从map中获取handler。AbstractUrlHandlerMapping实现具体用url从map中获取handler的过程以及map初始化。这里的map就是AbstractUrlHandlerMapping中的handlerMap，另外还单独定义了处理“/”请求的处理器rootHandler。
-```java
+``` java
 protected Object getHandlerInternal(HttpServletRequest request) throws Exception {
     String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
     Object handler = lookupHandler(lookupPath, request);
@@ -1002,7 +997,7 @@ protected Object getHandlerInternal(HttpServletRequest request) throws Exception
 ```
 >> 除了lookupHandler和buildPathExposingHandler其他方法都很好理解。
 - lookupHandler是从map中查找handler，很多时候不能找到因为很多handler都是使用匹配模式入“/book/*”。方法代码：
-```java
+``` java
 protected Object lookupHandler(String urlPath, HttpServletRequest request) throws Exception {
     // 直接匹配
     Object handler = this.handlerMap.get(urlPath);
