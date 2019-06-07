@@ -4,7 +4,7 @@ package com.mwl.bloom;
  * @author mawenlong
  * @date 2018/11/30
  * <p>
- * BloomFilters
+ * BloomFilters 布隆过滤
  */
 public class BloomFilters {
     /**
@@ -56,7 +56,7 @@ public class BloomFilters {
         return true;
     }
 
-    private int hashcode_1(String key) {
+    private static int hashcode_1(String key) {
         int hash = 0;
         int i;
         for (i = 0; i < key.length(); ++i) {
@@ -65,7 +65,7 @@ public class BloomFilters {
         return Math.abs(hash);
     }
 
-    private int hashcode_2(String data) {
+    private static int hashcode_2(String data) {
         final int p = 16777619;
         int hash = (int) 2166136261L;
         for (int i = 0; i < data.length(); i++) {
@@ -79,7 +79,7 @@ public class BloomFilters {
         return Math.abs(hash);
     }
 
-    private int hashcode_3(String key) {
+    private static int hashcode_3(String key) {
         int hash, i;
         for (hash = 0, i = 0; i < key.length(); ++i) {
             hash += key.charAt(i);
