@@ -1065,7 +1065,7 @@ protected Object lookupHandler(String urlPath, HttpServletRequest request) throw
 }
 ```
 - buildPathExposingHandler方法用于给查找到的handler设置两个拦截器PathExposingHandlerInterceptor和UriTemplateVariablesHandlerInterceptor.这是两个内部拦截器，主要作用是将当前url实际匹配的Pattern、匹配条件和url模板参数设置到request属性，这样后面就可以直接从request属性获取。
-```java
+``` java
 protected Object buildPathExposingHandler(Object rawHandler, String bestMatchingPattern,
         String pathWithinMapping, Map<String, String> uriTemplateVariables) {
 
@@ -1107,7 +1107,7 @@ private class UriTemplateVariablesHandlerInterceptor extends HandlerInterceptorA
 }
 ```
 >> map初始化是通过registerHandler方法进行，这个方法不是父类调用是其子类调用。这样不同子类可以通过注册不同的handler。AbstractUrlHandlerMapping有两个registerHandler方法一个是注册多个url到一个处理器，实现就是遍历url调用第二个进行注册。另一个注册过程是，先看原来map有没有传入url没有就添加进去，如果有就看handler是否是同一个如果不是就有问题。还有就是不放“/”或者"/*".
-```java
+``` java
 protected void registerHandler(String urlPath, Object handler) throws BeansException, IllegalStateException {
     Assert.notNull(urlPath, "URL path must not be null");
     Assert.notNull(handler, "Handler object must not be null");
@@ -1154,7 +1154,7 @@ protected void registerHandler(String urlPath, Object handler) throws BeansExcep
 #### 3.1.3 SimpleUrlHandlerMapping
 >> 其中定义了一个map变量urlMap，作用为方便配置以及在注册前做一下预处理，将所有url和handler的对应关系放在里面，最后注册前做一些预处理。
 >> SimpleUrlHandlerMapping重写了父类initApplicationContext，调用registerHandlers方法完成handler注册。
-```java
+``` java
 private final Map<String, Object> urlMap = new LinkedHashMap<String, Object>();
 public void initApplicationContext() throws BeansException {
     super.initApplicationContext();
@@ -1183,7 +1183,7 @@ protected void registerHandlers(Map<String, Object> urlMap) throws BeansExceptio
 ```
 #### 3.1.3 AbstractDetectingUrlHandlerMapping
 >> 这个类也通过重写initApplicationContext来注册handler里面调用detectHandlers()，在detectHandlers中根据配置的detectHandlersInAncestorContexts参数从springMVC容器及其父容器找到所有的bean的beanName，然后用determineUrlsForHandler方法对每个beanName解析出对应的urls，如果解析不为空就注册到父类map。determineUrlsForHandler是模板方法子类实现。
-```java
+``` java
 public void initApplicationContext() throws ApplicationContextException {
     super.initApplicationContext();
     detectHandlers();
@@ -1217,7 +1217,7 @@ AbstractDetectingUrlHandlerMapping存在三个子类：
 - DefaultAnnotationHandlerMapping（已经标记为废弃）不分析
 - BeanNameUrlHandlerMapping
 >> 检查beanNameh和alias是不是以"/"开头,如果是则将其作为url,里面只有一个方法determineUrlsForHandler
-```java
+``` java
 protected String[] determineUrlsForHandler(String beanName) {
     List<String> urls = new ArrayList<String>();
     if (beanName.startsWith("/")) {
@@ -1234,7 +1234,7 @@ protected String[] determineUrlsForHandler(String beanName) {
 ```
 - AbstractControllerUrlHandlerMapping
 >>AbstractControllerUrlHandlerMapping是将实现了Contrller接口或注释了@Controller的bean作为Handler,并且可以通过设置excludedClasses和excludedPackages排除一些bean。这里的determineUrlsForHandler方法主要负责将符合条件的Handler找出了，而具体什么url则使用模板方法buildUrlsForHandler交给子类去做。代码（省略日志）：
-```java
+``` java
 private Set<String> excludedPackages = Collections.singleton("org.springframework.web.servlet.mvc");
 private Set<Class<?>> excludedClasses = Collections.emptySet();
 protected String[] determineUrlsForHandler(String beanName) {
@@ -1270,7 +1270,7 @@ protected boolean isEligibleForMapping(String beanName, Class<?> beanClass) {
 >> 它有两个子类ControllerBeanNameHandlerMapping和ControllerClassNameHandlerMapping，从名称一个使用className作为url另一个使用spring容器中的beanName作为url。
 #### 3.1.4 AbstractHandlerMethodMapping
 >> AbstractHandlerMethodMapping系列只有三个类：AbstractHandlerMethodMapping、RequestMappingInfoHandlerMapping和RequestMappingHandlerMapping，这三个类依次继承。AbstractHandlerMethodMapping系列是将Method作为Handler来使用，这是使用最多的Handler，经常使用的@RequestMapping所注释的方法就是这种Handler，它有一个类型--HandlerMethod，也就是Method类型的Handler。
-```java
+``` java
 private final Map<T, HandlerMethod> handlerMethods = new LinkedHashMap<T, HandlerMethod>();
 private final MultiValueMap<String, T> urlMap = new LinkedMultiValueMap<String, T>();
 private final MultiValueMap<String, HandlerMethod> nameMap = new LinkedMultiValueMap<String, HandlerMethod>();
@@ -1283,7 +1283,7 @@ private final MultiValueMap<String, HandlerMethod> nameMap = new LinkedMultiValu
 >> urlMap:保存着url与匹配条件的对应关系。
 >> nameMap:保存name与HandlerMethod的对应关系。
 >> AbstractHandlerMethodMapping实现了InitializingBean接口，spring容器会自动调用afterPropertiesSet，这个方法有调用了initHandlerMethods方法完成具体的初始化。
-```java
+``` java
 public void afterPropertiesSet() {
     initHandlerMethods();
 }
@@ -1321,7 +1321,7 @@ protected boolean isHandler(Class<?> beanType) {
 }
 ```
 >> detectHandlerMethods负责将Handler保存到Map里，handlerMethodsInitialized可以对Handler进行一些初始化模板方法（子类没有实现）
-```java
+``` java
 protected void detectHandlerMethods(final Object handler) {
     // 获取Handler类型
     Class<?> handlerType = (handler instanceof String ?
@@ -1359,7 +1359,7 @@ protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handler
 ```
 - AbstractHandlerMethodMapping使用
 >> 类主要通过getHandlerInternal方法获取处理器
-```java
+``` java
 protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
     // 根据request获取lookupPath
     String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
@@ -1432,7 +1432,7 @@ protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletReques
 ### 3.2 HandlerAdapter
 ![avatar](HandlerAdapter.png)
 >> HandlerAdapter是使用Handler来处理请求的类，一共有五个Adapter，其中只有RequestMappingHandlerAdapter有两层，别的都只有一层，有一个已经标记为已废弃。RequestMappingHandlerAdapter的实现最复杂因为所处理的handler是任意方法，其他的都非常简单直接调用handler的固定方法，其中SimpleServletHandlerAdapter代码：
-```java
+``` java
 public class SimpleServletHandlerAdapter implements HandlerAdapter {
 	@Override
 	public boolean supports(Object handler) {
@@ -1452,7 +1452,7 @@ public class SimpleServletHandlerAdapter implements HandlerAdapter {
 ```
 #### 3.2.1 RequestMappingHandlerAdapter概述
 >> RequestMappingHandlerAdapter的父类AbstractHandlerMethodAdapter也非常简单，代码：
-```java
+``` java
 public final boolean supports(Object handler) {
     return (handler instanceof HandlerMethod && supportsInternal((HandlerMethod) handler));
 }
@@ -1481,7 +1481,7 @@ public final long getLastModified(HttpServletRequest request, Object handler) {
 - 具体进行绑定的方法
 
 
-```java
+``` java
 public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		implements BeanFactoryAware, InitializingBean {
 
@@ -2009,7 +2009,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 #### 3.2.2 ModelAndViewContainer
 >> ModelAndViewContainer承担着整个请求过程中的数据的传递工作。它除了报错Model和View外还有一些其他的功能。
-```java
+``` java
 private boolean ignoreDefaultModelOnRedirect = false;
 // 视图，可以是实际视图也可以是String类型的逻辑视图
 private Object view;
@@ -2030,7 +2030,7 @@ private boolean requestHandled = false;
 #### 3.2.4 ModelFactory
 >> ModelFactory是用来维护Model的，具体用两个功能：初始化Model以及处理器执行后将Model中相应的参数更新到SessionAttributes中。
 
-```java
+``` java
 public void initModel(NativeWebRequest request, ModelAndViewContainer mavContainer, HandlerMethod handlerMethod)
         throws Exception {
     // 从sessionAttributes中取出保存的参数，并合并到mavContainer
@@ -2051,7 +2051,7 @@ public void initModel(NativeWebRequest request, ModelAndViewContainer mavContain
 }
 ```
 - 执行注释了@ModelAttribute的方法并将结果设置到Model
-```java
+``` java
 private void invokeModelAttributeMethods(NativeWebRequest request, ModelAndViewContainer mavContainer)
         throws Exception {
     while (!this.modelMethods.isEmpty()) {
@@ -2092,7 +2092,7 @@ public static String getNameForReturnValue(Object returnValue, MethodParameter r
 }
 ```
 - 遍历即注释了@ModelAttribute又在@SessionAttributes注释中的参数
-```java
+``` java
 private List<String> findSessionAttributeArguments(HandlerMethod handlerMethod) {
     List<String> result = new ArrayList<String>();
     // 遍历方法的每个参数，如果有@ModelAttribute注释则获取到它对应的参数名，然后用获取到的参数名和参数的类型检查是不是@SessionAttribute注释，如果在这符合要求
@@ -2115,7 +2115,7 @@ public static String getNameForParameter(MethodParameter parameter) {
 }
 ```
 - 更新Model
-```java
+``` java
 public void updateModel(NativeWebRequest request, ModelAndViewContainer mavContainer) throws Exception {
     ModelMap defaultModel = mavContainer.getDefaultModel();
     // 如果SessionStatus#setComplete则将SessionAttributes清空，否则将defaultModel相应的参数设置到SessionAttributes
@@ -2166,7 +2166,7 @@ private boolean isBindingCandidate(String attributeName, Object value) {
 >> ServletInvocableHandlerMethod其实就是一种HandlerMethod，只是添加了方法执行的功能。 
 - HandlerMethod
 >> 用于封装Handelr和其中处理请求的Handler，分别对应 其中的bean和method属性.
-```java
+``` java
 private final Object bean;
 private final Method method;
 // 新建HandlerMethod时传入的Handler（bean属性）是String的情况
@@ -2177,7 +2177,7 @@ private final Method bridgedMethod;
 private final MethodParameter[] parameters;
 ```
 >> 所有的属性都是final，创建之后就不能修改。Handerl如果是String类型，将其变为容器中对应bean的过程在专门方法createWithResolvedBean中
-```java
+``` java
 public HandlerMethod createWithResolvedBean() {
     Object handler = this.bean;
     if (this.bean instanceof String) {
@@ -2188,7 +2188,7 @@ public HandlerMethod createWithResolvedBean() {
 }
 ```
 >>MethodParameter类型的对象表示一个方法的参数,代码：
-```java
+``` java
     // 参数所在方法
 	private final Method method;
     // 参数的构成方法
@@ -2253,7 +2253,7 @@ private class ReturnValueMethodParameter extends HandlerMethodParameter {
 	private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 ```
 InvocableHandlerMethod中Method调用的方法是invokeForRequest
-```java
+``` java
 public Object invokeForRequest(NativeWebRequest request, ModelAndViewContainer mavContainer,
         Object... providedArgs) throws Exception {
 
@@ -2273,7 +2273,7 @@ public Object invokeForRequest(NativeWebRequest request, ModelAndViewContainer m
 }
 ```
 主要做了两件事：一是准备方法所需要的参数，使用的是getMethodArgumentValues方法，另一条用于具体调用Method，具体使用的是doInvoke方法这个方法是实际执行请求处理的方法。
-```java
+``` java
 protected Object doInvoke(Object... args) throws Exception {
     ReflectionUtils.makeAccessible(getBridgedMethod());
     try {
@@ -2306,7 +2306,7 @@ protected Object doInvoke(Object... args) throws Exception {
 >> 真正执行的方法就是直接调用bridgedMethod的invoke方法，在调用前先使用ReflectionUtils.makeAccessible强制将它变为可调用，也就是说private方法也可以被调用
 
 >> 参数绑定的getMethodArgumentValues方法
-```java
+``` java
 private Object[] getMethodArgumentValues(NativeWebRequest request, ModelAndViewContainer mavContainer,
         Object... providedArgs) throws Exception {
     // 获取方法的参数，在HandlerMethod中
@@ -2355,7 +2355,7 @@ private Object[] getMethodArgumentValues(NativeWebRequest request, ModelAndViewC
 >> 对返回值的处理是使用returnValueHandlers属性完成的，它是HandlerMethodReturnValueHandlerComposite类型的。  
 
 >> ServletInvocableHandlerMethod处理请求的方法是
-```java
+``` java
 public void invokeAndHandle(ServletWebRequest webRequest,
         ModelAndViewContainer mavContainer, Object... providedArgs) throws Exception {
     // 调用父类的invokeForRequest执行请求
@@ -2404,7 +2404,7 @@ private void setResponseStatus(ServletWebRequest webRequest) throws IOException 
 ```
 #### 3.2.6 HandlerMethodArgumentResolver
 >> HandlerMethodArgumentResolver是用来为处理器解析参数的，主要用在InvocableHandlerMethod中。每个Resolver对应一种类型的参数。这些实现类有一个比较特殊就是HandlerMethodArgumentResolverComposite，它不具体解析参数，而是将多个解析器包含在其中，这就是责任链模式。接口的定义：
-```java
+``` java
 public interface HandlerMethodArgumentResolver {
     // 判断是否可以解析传入的参数
     boolean supportsParameter(MethodParameter parameter);
@@ -2418,7 +2418,7 @@ public interface HandlerMethodArgumentResolver {
 >> 下面分析解析Model类型参数的ModelMethodProcessor解析器和解析注释了@PathVariable的参数类型的PathVariableMethodArgumentResolver的解析器。
 - ModelMethodProcessor
 >> ModelMethodProcessor既可以解析参数也可以处理返回值，代码：
-```java
+``` java
 public class ModelMethodProcessor implements HandlerMethodArgumentResolver, HandlerMethodReturnValueHandler {
 	// 判断如果是不是Model类型
 	public boolean supportsParameter(MethodParameter parameter) {
@@ -2453,7 +2453,7 @@ public class ModelMethodProcessor implements HandlerMethodArgumentResolver, Hand
 >> 这个实现非常简单，supportsParameter方法，resolveArgument方法是直接返回
 - PathVariableMethodArgumentResolver
 >> PathVariableMethodArgumentResolver用于解析url中的路径，继承AbstractNamedValueMethodArgumentResolver这是一个处理nameValue类型参数的基类，cookie、requestParam、requestHeader、pathVariable等类型参数的解析器都继承自它。代码：
-```java
+``` java
 public final Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
         NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
     // 根据参数类型获取NamedValueInfo
@@ -2514,7 +2514,7 @@ protected static class NamedValueInfo {
 ```
 >> resolveArgument过程中所使用的方法。
 1. getNamedValueInfo方法根据参数类型获取NamedValueInfo，具体过程先从缓存中获取，如果获取不到则调用createNamedValueInfo方法，这是模板方法子类实现，创建出来后调用updateNamedValueInfo更新NamedValueInfo最后保存到缓存中。updateNamedValueInfo方法具体有两个功能：1.如果name为空则使用parmeter的name。2.如果默认值是代表没有ValueConstants.DEFAULT_NONE类型设置为null；
-```java
+``` java
 private NamedValueInfo getNamedValueInfo(MethodParameter parameter) {
     NamedValueInfo namedValueInfo = this.namedValueInfoCache.get(parameter);
     if (namedValueInfo == null) {
@@ -2539,7 +2539,7 @@ private NamedValueInfo updateNamedValueInfo(MethodParameter parameter, NamedValu
 }
 ```
 >> createNamedValueInfo在子类PathVariableMethodArgumentResolver的实现是根据@PathVariable注释创建的，这里使用了继承自NameValueInfo的内部类PathVariableNamedValueInfo，在PathVariableNamedValueInfo的构造方法里使用@PathVariable注释的value创建NameValueInfo代码：
-```java
+``` java
 protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
     PathVariable annotation = parameter.getParameterAnnotation(PathVariable.class);
     return new PathVariableNamedValueInfo(annotation);
@@ -2551,7 +2551,7 @@ private static class PathVariableNamedValueInfo extends NamedValueInfo {
 }
 ```
 2. resolveName,这个方法用于具体解析参数，是个模板方法，PathVariableMethodArgumentResolver的实现如下：
-```java
+``` java
 protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest request) throws Exception {
     Map<String, String> uriTemplateVars = (Map<String, String>) request.getAttribute(
             HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
@@ -2561,14 +2561,14 @@ protected Object resolveName(String name, MethodParameter parameter, NativeWebRe
 >> 这里直接就是从request里面获取HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE属性的值，这个值是在RequestMappingInfoHandlerMapping中的handlerMatch中设置的，也就是在HandlerMapping中根据lookuppath找到处理请求的处理器后设置的。
 3. resolveStringValue，这个方法是根据NameValueInfo的defaultValue设置默认值的。
 4. handleMissingValue，如果参数是必须存在，也就是NameValueInfo的required为true，但是没有解析出参数，而且没有默认值，就会调用，这也是模板方法,PathVariableMethodArgumentResolver的实现是直接抛出异常。
-```java
+``` java
 protected void handleMissingValue(String name, MethodParameter parameter) throws ServletException {
     throw new ServletRequestBindingException("Missing argument '" + name +
             "' for method parameter of type " + parameter.getNestedParameterType().getSimpleName());
 }
 ```
 5. handleNullValue，如果解析结果为null，而且也没有默认值，并且handleMassingValue没调用或者调用了但是没有抛异常的情况下才会执行。
-```java
+``` java
 private Object handleNullValue(String name, Object value, Class<?> paramType) {
     if (value == null) {
         if (Boolean.TYPE.equals(paramType)) {
@@ -2584,7 +2584,7 @@ private Object handleNullValue(String name, Object value, Class<?> paramType) {
 }
 ```
 6. handleResolvedValue,用于处理解析出的参数值，是模板方法，子类PathVariableMethodArgumentResolver的实现：
-```java
+``` java
 protected void handleResolvedValue(Object arg, String name, MethodParameter parameter,
         ModelAndViewContainer mavContainer, NativeWebRequest request) {
     String key = View.PATH_VARIABLES;
@@ -2610,7 +2610,7 @@ public interface HandlerMethodReturnValueHandler {
 ```
 >> HandlerMethodReturnValue这个接口和HandlerMethodArgumentResolver非常相似，接口也是有两个方法一个用于判断是否支持，一个用于距离具体的返回值。实现类中也有一个特殊的实现类HandlerMethodReturnValueHandlerComposite它不处理返回值是使用内部封装的组件进行处理。
 >> 处理器的实现非常简单，这里分析使用最多的ViewNameMethodReturnValueHandler。代码：
-```java
+``` java
 public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValueHandler {
 
 	private String[] redirectPatterns;
@@ -2719,7 +2719,7 @@ public class ViewResolverComposite implements ViewResolver, Ordered, Initializin
 #### 3.3.1 ContentNegotiatingViewResolver
 >> ContentNegotiatingViewResolver解析器的作用是在别的解析器解析的结果上添加了对MediaType和后缀的支持，MediaType就是媒体类型Content-Type。它对视图的解析不是自己完成的而是使用封装的ViewResolver完成的。过程是：首先遍历所封装的ViewResolver进行具体的解析视图，可能会解析出多个视图，然后在使用request获取Media-type也可能会有多个结果，最后对这两个结果进行匹配查找出最优的视图。
 >> ContentNegotiatingViewResolver是使用ViewResolver进行解析的，ViewResolver有两种初始化方法，一种是手动设置，另外一种是如果没有设置则自动获取spring容器中除它自己外的所有ViewResolvers。
-```java
+``` java
 @Override
 protected void initServletContext(ServletContext servletContext) {
     // 从spring容器中获取ViewResolver类型的bean
@@ -2754,7 +2754,7 @@ protected void initServletContext(ServletContext servletContext) {
 }
 ```
 >> 解析视图的过程：
-```java
+``` java
 public View resolveViewName(String viewName, Locale locale) throws Exception {
     // 使用RequestContextHolder获取RequestAttributes进而获取request
     RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
@@ -2783,7 +2783,7 @@ public View resolveViewName(String viewName, Locale locale) throws Exception {
 }
 ```
 >> getCandidateViews获取候选视图的方法：
-```java
+``` java
 private List<View> getCandidateViews(String viewName, Locale locale, List<MediaType> requestedMediaTypes)
         throws Exception {
     List<View> candidateViews = new ArrayList<View>();
@@ -2812,7 +2812,7 @@ private List<View> getCandidateViews(String viewName, Locale locale, List<MediaT
 }
 ```
 >> 解析出候选视图中的最佳视图getBestView方法：
-```java
+``` java
 private View getBestView(List<View> candidateViews, List<MediaType> requestedMediaTypes, RequestAttributes attrs) {
     // 判断候选视图中有没有redirect视图，如果有直接返回
     for (View candidateView : candidateViews) {
@@ -2851,7 +2851,7 @@ private View getBestView(List<View> candidateViews, List<MediaType> requestedMed
 >> AbstractCachingViewResolver提供了统一的缓存功能，当视图解析过一次就被缓存起来。
 >> 它的直接继承类有三个：ResourceBundleViewResolver、XmlViewResolver和UrlBasedViewResolver,第一个是通过使用properties属性配置文件解析视图的；第二个和第一个相似只不过它是通过xml配置文件；第三个是所有直接将逻辑视图最为url查找模板文件ViewResolver的基类，它设置了统一查找模板的规则，每个子类对应一个视图类型。
 >> 前两个解析器的实现原理，都是根据locale将相应的配置文件初始化到beanFactory，然后直接将逻辑视图作为beanName到factory里查找就行。
-```java
+``` java
 protected View loadView(String viewName, Locale locale) throws Exception {
     BeanFactory factory = initFactory(locale);
     try {
@@ -2864,7 +2864,7 @@ protected View loadView(String viewName, Locale locale) throws Exception {
 }
 ```
 >> AbstractCachingViewResolver中解析视图的过程：
-```java
+``` java
 public View resolveViewName(String viewName, Locale locale) throws Exception {
     if (!isCache()) {
         // 实际创建视图
@@ -2902,7 +2902,7 @@ public View resolveViewName(String viewName, Locale locale) throws Exception {
 >> UrlBasedViewResolver里面重写了父类的getCacheKey、createView和loadView三个方法。
 >> getCacheKey方法直接返回viewName，它用于父类AbstractCachingViewResolver中设置缓存的key，原来（AbstractCachingViewResolver）使用的是viewName+“_”+locale,因此此类不支持locale
 >> createView中首先检查是否可以解析传入的逻辑视图，如果不可以直接返回null让别的解析器解析，接着分别检查是不是redirect
-```java
+``` java
 protected View createView(String viewName, Locale locale) throws Exception {
     // 检查是否支持此逻辑视图，可以配置支持的模板
     if (!canHandle(viewName, locale)) {
@@ -2925,7 +2925,7 @@ protected View createView(String viewName, Locale locale) throws Exception {
 }
 ```
 >> loadView方法代码：
-```java
+``` java
 protected View loadView(String viewName, Locale locale) throws Exception {
     // 使用buildView方法创建view
     AbstractUrlBasedView view = buildView(viewName);
@@ -2940,7 +2940,7 @@ private View applyLifecycleMethods(String viewName, AbstractView view) {
 }
 ```
 >> buildView用于具体创建View
-```java
+``` java
 protected AbstractUrlBasedView buildView(String viewName) throws Exception {
     AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(getViewClass());
     view.setUrl(getPrefix() + viewName + getSuffix());
@@ -2972,7 +2972,7 @@ protected AbstractUrlBasedView buildView(String viewName) throws Exception {
 }
 ```
 使用BeanUtils根据getViewClass方法的返回值创建出view，然后给viewName加上前缀和后缀，下面就是设置一些参数。getViewClass返回其中的viewClass属性，代表View的视图类型，设置视图的setViewClass方法：
-```java
+``` java
 public void setViewClass(@Nullable Class<?> viewClass) {
     if (viewClass != null && !requiredViewClass().isAssignableFrom(viewClass)) {
         throw new IllegalArgumentException("Given view class [" + viewClass.getName() +
@@ -2983,7 +2983,7 @@ public void setViewClass(@Nullable Class<?> viewClass) {
 ```
 
 InternalResourceViewResolver直接继承自UrlBasedViewResolver，它在构造方法中设置viewClass，在buildView中对父类创建的View设置了一些属性，requiredViewClass方法返回InternalResourceView类型，代码：
-```java
+``` java
 public InternalResourceViewResolver() {
     Class<?> viewClass = requiredViewClass();
     if (InternalResourceView.class == viewClass && jstlPresent) {
@@ -3009,7 +3009,7 @@ protected AbstractUrlBasedView buildView(String viewName) throws Exception {
 buildView方法给view设置alwaysInclude用于标识是否可以使用forward的情况下强制使用include。
 
 FreeMarkerViewResolver继承AbstractTemplateViewResolver，buildView主要设置一些属性。
-```java
+``` java
 @Override
 protected AbstractUrlBasedView buildView(String viewName) throws Exception {
     AbstractTemplateView view = (AbstractTemplateView) super.buildView(viewName);
