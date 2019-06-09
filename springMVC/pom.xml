@@ -31,11 +31,7 @@
         <artifactId>tomcat7-maven-plugin</artifactId>
         <version>2.2</version>
         <configuration>
-          <!--<url>http://localhost:8080/manager/text</url>    &lt;!&ndash;配置tomcat的路径&ndash;&gt;-->
-          <!--<username>admin</username>-->
-          <!--<password>admin</password>-->
-          <!--<uriEncoding>UTF-8</uriEncoding>   &lt;!&ndash;tomcat的url编码，达到和修改server.xml文件一样的功能&ndash;&gt;-->
-          <!-- 指定端口 -->
+            <!-- 指定端口 -->
           <port>8080</port>
           <!-- 请求路径 -->
           <path>/</path>
