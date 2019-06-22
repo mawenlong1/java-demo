@@ -1,4 +1,4 @@
-package com.mwl;
+package com.mwl.atomic;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  * @author mawenlong
  * @date 2019-06-21 20:51
  */
-
 public class AtomicIntegerFieldUpdaterTest {
     public static void main(String[] args) {
         AtomicIntegerFieldUpdater<User> a = AtomicIntegerFieldUpdater.newUpdater(User.class, "age");

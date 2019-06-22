@@ -1,4 +1,4 @@
-package com.mwl;
+package com.mwl.atomic;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author mawenlong
  * @date 2019-06-20 20:21
  */
-
 public class AtomicReferenceTest {
 
     public static void main(String[] args) {
