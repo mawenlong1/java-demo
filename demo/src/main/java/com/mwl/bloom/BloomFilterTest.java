@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * @author mawenlong
  * @date 2018/11/30
- * 现在有一个非常庞大的数据，假设全是 int 类型。现在我给你一个数，你需要告诉我它是否存在其中(尽量高效)。
+ * 现在有一个非常庞大的数据，假设全是 int 类型。现在我给你一个数，你需要告诉我它是否存在其中(不需要特别的准确尽量高效)。
  */
 public class BloomFilterTest {
 
