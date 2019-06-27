@@ -1,8 +1,10 @@
-package com.mwl;
+package com.mwl.design;
 
 /**
  * @author mawenlong
  * @date 2019-06-26 19:45
+ *
+ * 装饰者模式
  */
 // 抽象接口，用来规范将要被附加一些操作的对象
 interface People{
