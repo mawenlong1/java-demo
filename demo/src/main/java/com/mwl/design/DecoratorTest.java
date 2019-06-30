@@ -3,36 +3,37 @@ package com.mwl.design;
 /**
  * @author mawenlong
  * @date 2019-06-26 19:45
- *
+ * <p>
  * 装饰者模式
  */
 // 抽象接口，用来规范将要被附加一些操作的对象
-interface People{
-    public void wear();
+interface People {
+    void wear();
 }
 
 // 具体的对象，该对象将被附加一些额外的操作
-class Jane implements People{
+class Jane implements People {
     public void wear() {
         System.out.println("今天该穿什么呢?");
     }
 }
 
 // 装饰者类，持有一个将要被装饰的接口对象的实例
-class Decorator implements People{
+class Decorator implements People {
 
     private People people;
 
     public Decorator(People people) {
         this.people = people;
     }
+
     public void wear() {
         people.wear();
     }
 }
 
 // 具体的装饰者类，负责给增加附加的操作：穿衬衫
-class DecoratorShirt extends Decorator{
+class DecoratorShirt extends Decorator {
 
     public DecoratorShirt(People people) {
         super(people);
@@ -45,7 +46,7 @@ class DecoratorShirt extends Decorator{
 }
 
 // 具体的装饰者类，负责给增加附加的操作：穿西服
-class DecoratorSuit extends Decorator{
+class DecoratorSuit extends Decorator {
 
     public DecoratorSuit(People people) {
         super(people);
@@ -58,7 +59,7 @@ class DecoratorSuit extends Decorator{
 }
 
 // 具体的装饰者类，负责给增加附加的操作：穿T-Shirt
-class DecoratorTShirt extends Decorator{
+class DecoratorTShirt extends Decorator {
 
     public DecoratorTShirt(People people) {
         super(people);
@@ -71,7 +72,7 @@ class DecoratorTShirt extends Decorator{
 }
 
 // 具体的装饰者类，负责给增加附加的操作：穿裤子
-class DecoratorPants extends Decorator{
+class DecoratorPants extends Decorator {
 
     public DecoratorPants(People people) {
         super(people);
@@ -84,7 +85,7 @@ class DecoratorPants extends Decorator{
 }
 
 // 具体的装饰者类，负责给增加附加的操作：穿鞋子
-class DecoratorShoes extends Decorator{
+class DecoratorShoes extends Decorator {
 
     public DecoratorShoes(People people) {
         super(people);
