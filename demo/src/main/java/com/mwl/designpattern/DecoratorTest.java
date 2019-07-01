@@ -1,4 +1,4 @@
-package com.mwl.design;
+package com.mwl.designpattern;
 
 /**
  * @author mawenlong
