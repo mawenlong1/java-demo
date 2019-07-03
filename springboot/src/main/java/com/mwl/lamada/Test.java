@@ -27,7 +27,4 @@ public class Test {
         System.out.println(function.apply(777));
     }
 
-    public static void execute(WorkerInterface worker) {
-        worker.doSomeWork();
-    }
 }
