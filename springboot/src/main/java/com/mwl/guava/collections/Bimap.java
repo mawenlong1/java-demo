@@ -7,8 +7,8 @@ import com.google.common.collect.HashBiMap;
  * @author mawenlong
  * @date 2018/11/26
  *
- *       双向关联 Bimap数据的强制唯一性
- *       对于反转后的map的所有操作都会影响原先的map对象
+ * 双向关联 Bimap数据的强制唯一性
+ * 对于反转后的map的所有操作都会影响原先的map对象
  */
 public class Bimap {
   public static void main(String[] args) {
