@@ -23,7 +23,6 @@ public class GoController implements EnvironmentAware {
     //处理HEAD类型的“/”请求
     @RequestMapping(value = { "/head.do" }, method = { RequestMethod.HEAD })
     public String head() {
-//        HttpServletBean
         return "index.jsp";
     }
 

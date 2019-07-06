@@ -17,11 +17,8 @@ public class DiguaHandlerMapping implements HandlerMapping {
         String method = request.getMethod();
         if (url.startsWith("/tudou")) {
             if (method.equalsIgnoreCase("GET")) {
-
             } else if (method.equalsIgnoreCase("POST")) {
-
             } else {
-
             }
         }
         return null;
