@@ -37,14 +37,6 @@ public class LRUCacheLinkenHashMap<K, V> {
         return cache.put(key, value);
     }
 
-    public int getCacheSize() {
-        return cacheSize;
-    }
-
-    public void setCacheSize(int cacheSize) {
-        this.cacheSize = cacheSize;
-    }
-
     public void printCache() {
         for (Iterator it = cache.entrySet().iterator(); it.hasNext(); ) {
             Entry<K, V> entry = (Entry<K, V>) it.next();
