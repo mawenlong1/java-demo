@@ -34,7 +34,6 @@ public class CacheTest {
         cache.invalidate("key1");
         // 失效之后，查询，已不在缓存中, miss++
         System.out.println(cache.getIfPresent("key1")); // null
-
         try {
             // 查询缓存，未命中，调用load方法，返回-1. miss++
             System.out.println(cache.get("key2")); // -1
