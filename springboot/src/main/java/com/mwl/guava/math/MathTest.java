@@ -9,9 +9,9 @@ import com.google.common.math.LongMath;
  * @date 2018/11/26
  */
 public class MathTest {
-  public static void main(String[] args) {
-    IntMath.checkedAdd(1, 2);
-    LongMath.checkedAdd(1, 2);
-    BigIntegerMath.factorial(2);
-  }
+    public static void main(String[] args) {
+        IntMath.checkedAdd(1, 2);
+        LongMath.checkedAdd(1, 2);
+        BigIntegerMath.factorial(2);
+    }
 }
