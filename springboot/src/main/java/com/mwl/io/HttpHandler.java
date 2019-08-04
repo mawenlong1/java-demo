@@ -6,7 +6,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.nio.charset.Charset;
-import java.util.UUID;
 
 /**
  * @author mawenlong
@@ -19,11 +18,12 @@ public class HttpHandler extends SimpleChannelInboundHandler<ByteBuf> {
             throws Exception {
 
         byte[] buffer = new byte[msg.readableBytes()];
-        msg.readBytes(buffer);//注意buffer的长度必须和msg.readableBytes()一样，否则报错，这是netty规定的
+        //注意buffer的长度必须和msg.readableBytes()一样，否则报错，这是netty规定的
+        msg.readBytes(buffer);
         String message = new String(buffer, Charset.forName("utf-8"));
         System.out.println("服务端接收到的消息：" + message);
         // 响应接受的消息
-        ByteBuf responseMessage = Unpooled.copiedBuffer(message+"--", Charset.forName("utf-8"));
+        ByteBuf responseMessage = Unpooled.copiedBuffer(message + "--", Charset.forName("utf-8"));
         ctx.writeAndFlush(responseMessage);
 
     }
