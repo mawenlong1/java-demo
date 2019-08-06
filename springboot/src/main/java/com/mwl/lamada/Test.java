@@ -12,6 +12,7 @@ import java.util.function.Predicate;
 public class Test {
     public static void main(String[] args) {
         Runnable r = () -> System.out.println("hello world");
+        r.run();
         Consumer<Integer> c = (Integer x) -> System.out.println(x);
         c.accept(1);
         BiConsumer<Integer, String> b = (Integer x, String y) -> System.out.println(x + " : " + y);
@@ -23,7 +24,7 @@ public class Test {
         };
         workerInterface.doSomeWork();
         workerInterface.testDefault();
-        Function<Integer, Integer> function = val->val+10;
+        Function<Integer, Integer> function = val -> val + 10;
         System.out.println(function.apply(777));
     }
 
