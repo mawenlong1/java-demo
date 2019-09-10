@@ -3,6 +3,9 @@ package com.mwl.beanwrapper;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
+/**
+ * BeanWrapper类的使用
+ */
 public class Test {
     public static void main(String[] args) {
         User user = new User();
