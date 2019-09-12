@@ -31,6 +31,7 @@ public class FollowMeController {
         logger.info("编码后comment：" + comment);
         if (comment != null) {
             logger.info("原始comment：" + comment);
+            //去除敏感词
             for (String sw : sensitiveWords) {
                 comment = comment.replaceAll(sw, "");
             }
@@ -44,7 +45,7 @@ public class FollowMeController {
 
         attributes.addFlashAttribute("comment", model.asMap().get("comment"));
         model.addAttribute("articleId", articleId);
-//        保存到数据库
+        //保存到数据库
         return "redirect:/showArticle";
     }
 
