@@ -17,4 +17,12 @@ public class User {
                "name='" + name + '\'' +
                '}';
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof User) {
+            return ((User) obj).getName() == name;
+        }
+        return super.equals(obj);
+    }
 }
