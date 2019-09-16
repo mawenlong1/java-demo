@@ -21,7 +21,6 @@ public class Producer implements Runnable {
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
         for (int i = 0; i < 7; i++) {
             System.out.println("Produced:" + i);
             try {
