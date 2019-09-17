@@ -22,7 +22,7 @@ public class Producer implements Runnable {
     @Override
     public void run() {
         for (int i = 0; i < 7; i++) {
-            System.out.println("Produced:" + i);
+            System.out.println("生产:" + i);
             try {
                 produce(i);
             } catch (InterruptedException ex) {
@@ -34,8 +34,8 @@ public class Producer implements Runnable {
     private void produce(int i) throws InterruptedException {
         while (sharedQueue.size() == SIZE) {
             synchronized (sharedQueue) {
-                System.out.println("Queue is full " + Thread.currentThread().getName()
-                                   + " is waiting , size: " + sharedQueue.size());
+                System.out.println("队列已满。" + Thread.currentThread().getName()
+                                   + " 正在等待 , 队列大小: " + sharedQueue.size());
                 sharedQueue.wait();
             }
         }

@@ -21,7 +21,7 @@ public class Consumer implements Runnable {
     public void run() {
         while (true) {
             try {
-                System.out.println("Consumer: " + consume());
+                System.out.println("消费: " + consume());
                 Thread.sleep(50);
             } catch (InterruptedException ex) {
                 System.out.println(Consumer.class.getName());
@@ -33,8 +33,8 @@ public class Consumer implements Runnable {
 
         while (sharedQueue.isEmpty()) {
             synchronized (sharedQueue) {
-                System.out.println("Queue is empty " + Thread.currentThread().getName()
-                                   + " is waiting , size: " + sharedQueue.size());
+                System.out.println("队列以空。" + Thread.currentThread().getName()
+                                   + "正在等待 , 大小: " + sharedQueue.size());
                 sharedQueue.wait();
             }
         }
