@@ -5,7 +5,7 @@ import java.util.Scanner;
 /**
  * @author mawenlong
  * @date 2019-07-05 13:10
- *
+ * <p>
  * 筛法求素数
  */
 public class Main {
@@ -14,11 +14,11 @@ public class Main {
         while (in.hasNextInt()) {
             int n = in.nextInt();
             int[] array = new int[n];
-//            初始化筛数组
+            // 初始化筛数组
             for (int i = 2; i < n; i++) {
                 array[i] = i;
             }
-//            如果没被筛出，则记录，并将temp的倍数筛出
+            // 如果没被筛出，则记录，并将temp的倍数筛出
             for (int i = 2; i < n; i++) {
                 if (array[i] != 0) {
                     int j, temp;
