@@ -10,15 +10,14 @@ import java.util.Set;
 
 /**
  * @author mawenlong
- * @date 2018/11/30
- * 现在有一个非常庞大的数据，假设全是 int 类型。现在我给你一个数，你需要告诉我它是否存在其中(不需要特别的准确尽量高效)。
+ * @date 2018/11/30 现在有一个非常庞大的数据，假设全是 int 类型。现在我给你一个数，你需要告诉我它是否存在其中(不需要特别的准确尽量高效)。
  */
 public class BloomFilterTest {
 
     private final int NUM = 10000000;
 
     /**
-     * 在1000w数据时内存溢出
+     * 在1000w数据时内存溢出，使用hashmap
      */
     @Test
     public void hashMapTest() {
@@ -35,7 +34,7 @@ public class BloomFilterTest {
     }
 
     /**
-     * 在1000w数据时内存溢出
+     * 在1000w数据时内存溢出，布隆过滤
      */
     @Test
     public void bloomFilterTest() {
@@ -53,6 +52,9 @@ public class BloomFilterTest {
         System.out.println("执行时间：" + (end - star));
     }
 
+    /**
+     * guava的布隆过滤
+     */
     @Test
     public void guavaTest() {
         long star = System.currentTimeMillis();
