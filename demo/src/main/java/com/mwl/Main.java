@@ -54,14 +54,14 @@ public class Main {
         System.out.println(s1 == s2);
         //true
         System.out.println(intern1 == s2);
-        // 此时生成了四个对象 常量池中的"hello1" + 2个堆中的"hello1" + s3指向的堆中的对象（注此时常量池不会生成"hello1hello1"）
+        // 此时生成了四个对象 常量池中的"hello1" + 2个堆中的"hello1" + s3指向的堆中的对象。（注：此时常量池不会生成"hello1hello1"）
         String s3 = new String("hello1") + new String("hello1");
         //常量池中没有“hello1hello1",常量池不仅仅可以存储对象，还可以存储对象的引用，会直接将s3的地址存储在常量池
         String intern3 = s3.intern();
         //常量池中的地址其实就是s3的地址
         String s4 = "hello1hello1";
         //intern 方法：当执行s3.intern()时,字符串常量池中存储一份s3的引用，这个引用指向堆中的字面量。
-        //当运行到String s4 = "hellohello"时，发现字符串常量池已经存在一个指向堆中该字面量的引用，则返回这个引用，而这个引用就是s3。所以s3==s4输出true。
+        //当运行到String s4 = "hello1hello1"时，发现字符串常量池已经存在一个指向堆中该字面量的引用，则返回这个引用，而这个引用就是s3。所以s3==s4输出true。
         //true
         System.out.println(s3 == s4);
         //true
