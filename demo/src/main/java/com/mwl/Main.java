@@ -52,7 +52,7 @@ public class Main {
         String s2 = "hello";
         //false
         System.out.println(s1 == s2);
-        //true
+        //true 优先常量池
         System.out.println(intern1 == s2);
         // 此时生成了四个对象 常量池中的"hello1" + 2个堆中的"hello1" + s3指向的堆中的对象。（注：此时常量池不会生成"hello1hello1"）
         String s3 = new String("hello1") + new String("hello1");
