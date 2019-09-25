@@ -11,6 +11,11 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         testConstantPool();
+
+//        sort();
+    }
+
+    private static void sort() {
         Scanner in = new Scanner(System.in);
         while (in.hasNextInt()) {
             int n = in.nextInt();
