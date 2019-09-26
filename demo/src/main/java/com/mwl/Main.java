@@ -11,11 +11,10 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         testConstantPool();
-
-//        sort();
+        fun();
     }
-
-    private static void sort() {
+    //筛选法求质数
+    private static void fun() {
         Scanner in = new Scanner(System.in);
         while (in.hasNextInt()) {
             int n = in.nextInt();
