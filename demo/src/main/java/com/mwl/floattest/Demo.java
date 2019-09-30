@@ -23,6 +23,7 @@ public class Demo {
             sum += temp;
         }
         System.out.println(" 取余时间：" + (System.nanoTime() - start));
+        System.out.println(sum);
     }
 }
 
