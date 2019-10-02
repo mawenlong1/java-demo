@@ -22,7 +22,7 @@ public class Demo {
             int temp = i % 64;
             sum += temp;
         }
-        System.out.println(" 取余时间：" + (System.nanoTime() - start));
+        System.out.println("取余时间：" + (System.nanoTime() - start));
         System.out.println(sum);
     }
 }
