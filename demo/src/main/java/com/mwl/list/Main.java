@@ -19,7 +19,6 @@ public class Main {
         //[Hollis] subList的类型不能为ArrayList
         System.out.println(subList);
 
-
         List<String> sourceList = new ArrayList<String>() {{
             add("H");
             add("O");
@@ -28,15 +27,11 @@ public class Main {
             add("I");
             add("S");
         }};
-
         List subList1 = sourceList.subList(2, 5);
-
         System.out.println("sourceList ： " + sourceList);
         System.out.println("sourceList.subList(2, 5) 得到List ：");
         System.out.println("subList ： " + subList1);
-
         subList1.set(1, "666");
-
         System.out.println("subList.set(3,666) 得到List ：");
         System.out.println("subList ： " + subList1);
         System.out.println("sourceList ： " + sourceList);
