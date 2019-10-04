@@ -10,8 +10,8 @@ import com.google.common.math.LongMath;
  */
 public class MathTest {
     public static void main(String[] args) {
-        IntMath.checkedAdd(1, 2);
-        LongMath.checkedAdd(1, 2);
-        BigIntegerMath.factorial(2);
+        System.out.println(IntMath.checkedAdd(1, 2));
+        System.out.println(LongMath.checkedAdd(1, 2));
+        System.out.println(BigIntegerMath.factorial(2));
     }
 }
