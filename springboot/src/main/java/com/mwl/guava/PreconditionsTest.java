@@ -14,8 +14,8 @@ public class PreconditionsTest {
     }
 
     public static void insert(String name, int age) {
-        Preconditions.checkNotNull(name, "%s 不能为空", name);
-        Preconditions.checkArgument(!name.equals(""));
+        Preconditions.checkNotNull(name, "%s不能为空", name);
+        Preconditions.checkArgument(!name.isEmpty());
         Preconditions.checkArgument(age >= 0, "%s大于0", "age");
         System.out.println("name=" + name + "\nage=" + age);
     }
