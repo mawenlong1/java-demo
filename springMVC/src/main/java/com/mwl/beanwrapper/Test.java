@@ -14,7 +14,6 @@ public class Test {
         System.out.println("前:" + user);
         beanWrapper.setPropertyValue("name", "李四");
         System.out.println("后:" + user);
-
         // equals的默认实现是使用hashcode比较
         User user1 = new User();
         user1.setName("李四");
