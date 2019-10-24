@@ -38,7 +38,7 @@ public class SimpleDateTest {
     /**
      * 定义一个CountDownLatch，保证所有子线程执行完之后主线程再执行
      */
-    private static CountDownLatch countDownLatch = new CountDownLatch(100);
+    private static final CountDownLatch countDownLatch = new CountDownLatch(100);
 
     public static void main(String[] args) throws InterruptedException {
         // 定义一个线程安全的HashSet
