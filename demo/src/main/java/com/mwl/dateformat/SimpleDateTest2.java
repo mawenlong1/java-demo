@@ -19,10 +19,6 @@ import java.util.concurrent.TimeUnit;
  * @date 2018/12/28
  */
 public class SimpleDateTest2 {
-  /**
-   * 定义一个全局的SimpleDateFormat
-   */
-  private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   /**
    * 使用ThreadFactoryBuilder定义一个线程池
