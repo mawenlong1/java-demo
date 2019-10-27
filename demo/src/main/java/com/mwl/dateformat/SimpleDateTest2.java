@@ -23,17 +23,17 @@ public class SimpleDateTest2 {
   /**
    * 使用ThreadFactoryBuilder定义一个线程池
    */
-  private static ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+  private static final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
       .setNameFormat("demo-pool-%d").build();
 
-  private static ExecutorService pool = new ThreadPoolExecutor(5, 200, 0L, TimeUnit.MILLISECONDS,
+  private static final ExecutorService pool = new ThreadPoolExecutor(5, 200, 0L, TimeUnit.MILLISECONDS,
                                                                new LinkedBlockingQueue<Runnable>(1024), namedThreadFactory,
                                                                new ThreadPoolExecutor.AbortPolicy());
 
   /**
    * 定义一个CountDownLatch，保证所有子线程执行完之后主线程再执行
    */
-  private static CountDownLatch countDownLatch = new CountDownLatch(100);
+  private static final CountDownLatch countDownLatch = new CountDownLatch(100);
 
   public static void main(String[] args) throws InterruptedException {
     // 定义一个线程安全的HashSet
