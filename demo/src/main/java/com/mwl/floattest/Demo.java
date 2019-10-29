@@ -11,7 +11,7 @@ public class Demo {
         float f = 1 << 24;
         System.out.println(f == f + 1);
         int sum = 0;
-        Long start = System.nanoTime();
+        long start = System.nanoTime();
         for (int i = 0; i < NUM; i++) {
             int temp = i & 0x3f;
             sum += temp;
