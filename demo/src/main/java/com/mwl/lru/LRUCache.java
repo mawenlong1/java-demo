@@ -12,6 +12,11 @@ public class LRUCache {
     private int capacity;
     private DLinkedNode head, tail;
 
+
+    public LRUCache() {
+        this(10);
+    }
+
     public LRUCache(int capacity) {
         count = 0;
         this.capacity = capacity;
