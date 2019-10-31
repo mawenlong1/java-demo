@@ -4,7 +4,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * @author mawenlong
@@ -12,7 +11,7 @@ import java.util.Set;
  */
 public class LRUCacheLinkenHashMap<K, V> {
     LinkedHashMap<K, V> cache;
-    private int cacheSize;
+    private final int cacheSize;
 
     public LRUCacheLinkenHashMap(final int cacheSize) {
         // ceil浮点数向上取整数
