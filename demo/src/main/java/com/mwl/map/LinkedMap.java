@@ -51,7 +51,7 @@ public class LinkedMap {
         // }
 
         //第一种：通过entrySet().iterator()遍历HashMap的key和映射的value,效率高
-        Long begin = System.currentTimeMillis();
+        long begin = System.currentTimeMillis();
         Iterator iter = test1.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
@@ -59,7 +59,7 @@ public class LinkedMap {
             Object val = entry.getValue();
             // System.out.println(key + "-->" + val);
         }
-        Long time1 = System.currentTimeMillis() - begin;
+        long time1 = System.currentTimeMillis() - begin;
         //第二种：通过遍历keySet()遍历HashMap的value，效率低
         begin = System.currentTimeMillis();
         iter = test1.keySet().iterator();
@@ -68,7 +68,7 @@ public class LinkedMap {
             Object val = test1.get(key);
             // System.out.println(key + "-->" + val);
         }
-        Long time2 = System.currentTimeMillis() - begin;
+        long time2 = System.currentTimeMillis() - begin;
         System.out.println("第一种遍历需要的时间：" + time1);
         System.out.println("第二种遍历需要的时间：" + time2);
     }
