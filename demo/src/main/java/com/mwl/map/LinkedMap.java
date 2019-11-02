@@ -66,7 +66,7 @@ public class LinkedMap {
         while (iter.hasNext()) {
             Object key = iter.next();
             Object val = test1.get(key);
-            // System.out.println(key + "-->" + val);
+             System.out.println(key + "-->" + val);
         }
         long time2 = System.currentTimeMillis() - begin;
         System.out.println("第一种遍历需要的时间：" + time1);
