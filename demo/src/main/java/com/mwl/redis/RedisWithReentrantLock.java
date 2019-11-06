@@ -14,7 +14,7 @@ import java.util.Map;
 public class RedisWithReentrantLock {
     private ThreadLocal<Map<String, Integer>> lockers = new ThreadLocal<>();
 
-    private Jedis jedis;
+    private final Jedis jedis;
 
     public RedisWithReentrantLock(Jedis jedis) {
         this.jedis = jedis;
@@ -70,7 +70,7 @@ public class RedisWithReentrantLock {
     }
 
     public static void main(String[] args) {
-        Jedis jedis = new Jedis("111.231.228.108",6379);
+        Jedis jedis = new Jedis("111.231.228.108", 6379);
         RedisWithReentrantLock redis = new RedisWithReentrantLock(jedis);
         System.out.println(redis.lock("codehole"));
         System.out.println(redis.lock("codehole"));
