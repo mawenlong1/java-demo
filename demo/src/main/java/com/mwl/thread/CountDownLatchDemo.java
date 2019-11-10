@@ -17,7 +17,8 @@ public class CountDownLatchDemo {
         Worker worker2 = new Worker("li si", 8000, latch);
         worker1.start();
         worker2.start();
-        latch.await();// 等待所有工人完成工作
+        //等待所有工人完成工作
+        latch.await();
         System.out.println("all work done at " + sdf.format(new Date()));
     }
 
