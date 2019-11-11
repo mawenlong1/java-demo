@@ -27,7 +27,7 @@ public class CountDownLatchDemo {
         int workTime;
         CountDownLatch latch;
 
-        public Worker(String workerName, int workTime, CountDownLatch latch) {
+        Worker(String workerName, int workTime, CountDownLatch latch) {
             this.workerName = workerName;
             this.workTime = workTime;
             this.latch = latch;
