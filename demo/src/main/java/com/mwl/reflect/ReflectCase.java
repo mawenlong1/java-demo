@@ -19,7 +19,6 @@ public class ReflectCase {
         String str3 = "ab";
         String str4 = str1 + str2;
         String str5 = new String("ab");
-
         System.out.println(str5.equals(str3));
         System.out.println(str5 == str3);
         System.out.println(str5.intern() == str3);
