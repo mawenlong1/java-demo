@@ -23,6 +23,18 @@ public class ReflectCase {
         System.out.println(str5 == str3);
         System.out.println(str5.intern() == str3);
         System.out.println(str5.intern() == str4);
+
+        String a = new String("ab");
+        String b = new String("ab");
+        String c = "ab";
+        String d = "a" + "b";
+        String e = "b";
+        String f = "a" + e;
+
+        System.out.println(b.intern() == a);
+        System.out.println(b.intern() == c);
+        System.out.println(b.intern() == d);
+        System.out.println(b.intern() == f);
     }
 
     static class Proxy {
