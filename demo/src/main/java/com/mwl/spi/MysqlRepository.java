@@ -7,6 +7,6 @@ package com.mwl.spi;
 public class MysqlRepository implements IRepository {
     @Override
     public void save(String data) {
-        System.out.println("Save " + data + " to Mysql");
+        System.out.println("Save " + data + " to Mysql。");
     }
 }
