@@ -10,11 +10,9 @@ public class Consumer implements Runnable {
 
 
     private final Vector sharedQueue;
-    private final int SIZE;
 
-    public Consumer(Vector sharedQueue, int size) {
+    public Consumer(Vector sharedQueue) {
         this.sharedQueue = sharedQueue;
-        this.SIZE = size;
     }
 
     @Override

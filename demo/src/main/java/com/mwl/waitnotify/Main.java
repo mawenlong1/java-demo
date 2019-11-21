@@ -12,7 +12,7 @@ public class Main {
         Vector sharedQueue = new Vector();
         int size = 4;
         Thread prodThread = new Thread(new Producer(sharedQueue, size), "Producer");
-        Thread consThread = new Thread(new Consumer(sharedQueue, size), "Consumer");
+        Thread consThread = new Thread(new Consumer(sharedQueue), "Consumer");
         prodThread.start();
         consThread.start();
     }
