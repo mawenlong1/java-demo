@@ -13,7 +13,8 @@ public class Main {
         testConstantPool();
         fun();
     }
-    //筛选法求质数
+
+    // 筛选法求质数
     private static void fun() {
         Scanner in = new Scanner(System.in);
         while (in.hasNextInt()) {
