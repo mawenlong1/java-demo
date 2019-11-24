@@ -12,13 +12,13 @@ import java.time.format.DateTimeFormatter;
  */
 public class DateTimeFormatterTest {
     public static void main(String[] args) {
-        //解析日期
+        // 解析日期
         String dateStr = "2016年10月25日";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
         LocalDate date = LocalDate.parse(dateStr, formatter);
         System.out.println(date);
 
-        //日期转换为字符串
+        // 日期转换为字符串
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy年MM月dd日 hh:mm a");
         String nowStr = now.format(format);
