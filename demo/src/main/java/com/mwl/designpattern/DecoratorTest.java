@@ -23,7 +23,7 @@ class Decorator implements People {
 
     private People people;
 
-    public Decorator(People people) {
+    Decorator(People people) {
         this.people = people;
     }
 
@@ -35,7 +35,7 @@ class Decorator implements People {
 // 具体的装饰者类，负责给增加附加的操作：穿衬衫
 class DecoratorShirt extends Decorator {
 
-    public DecoratorShirt(People people) {
+    DecoratorShirt(People people) {
         super(people);
     }
 
@@ -48,7 +48,7 @@ class DecoratorShirt extends Decorator {
 // 具体的装饰者类，负责给增加附加的操作：穿西服
 class DecoratorSuit extends Decorator {
 
-    public DecoratorSuit(People people) {
+    DecoratorSuit(People people) {
         super(people);
     }
 
@@ -61,7 +61,7 @@ class DecoratorSuit extends Decorator {
 // 具体的装饰者类，负责给增加附加的操作：穿T-Shirt
 class DecoratorTShirt extends Decorator {
 
-    public DecoratorTShirt(People people) {
+    DecoratorTShirt(People people) {
         super(people);
     }
 
@@ -74,7 +74,7 @@ class DecoratorTShirt extends Decorator {
 // 具体的装饰者类，负责给增加附加的操作：穿裤子
 class DecoratorPants extends Decorator {
 
-    public DecoratorPants(People people) {
+    DecoratorPants(People people) {
         super(people);
     }
 
@@ -87,7 +87,7 @@ class DecoratorPants extends Decorator {
 // 具体的装饰者类，负责给增加附加的操作：穿鞋子
 class DecoratorShoes extends Decorator {
 
-    public DecoratorShoes(People people) {
+    DecoratorShoes(People people) {
         super(people);
     }
 
