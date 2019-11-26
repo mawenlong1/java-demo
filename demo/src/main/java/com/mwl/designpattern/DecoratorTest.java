@@ -87,7 +87,7 @@ class DecoratorPants extends Decorator {
 // 具体的装饰者类，负责给增加附加的操作：穿鞋子
 class DecoratorShoes extends Decorator {
 
-    public DecoratorShoes(People people) {
+    DecoratorShoes(People people) {
         super(people);
     }
 
