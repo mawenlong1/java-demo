@@ -50,10 +50,7 @@ public class BloomFilters {
             return false;
         }
         int thirdIndex = array[third % arraySize];
-        if (thirdIndex == 0) {
-            return false;
-        }
-        return true;
+        return thirdIndex == 0;
     }
 
     private static int hashcode_1(String key) {
