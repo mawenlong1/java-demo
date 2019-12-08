@@ -37,7 +37,7 @@ public class Main {
     }
 
 
-    // byte 与 int 的相互转换
+    // byte与int的相互转换
     public static byte intToByte(int x) {
         return (byte) x;
     }
