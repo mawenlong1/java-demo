@@ -27,7 +27,7 @@ public class Main {
         System.out.println("int3=" + int3);//int3=1417
 
 
-        // 测试 long 转 byte 数组
+        // 测试long转byte数组
         long long1 = 2223;
         byte[] bytesLong = longToBytes(long1);
         System.out.println("bytes=" + bytesLong);//bytes=[B@c17164
