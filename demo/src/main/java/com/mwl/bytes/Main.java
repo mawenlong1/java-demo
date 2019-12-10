@@ -22,7 +22,7 @@ public class Main {
         int int2 = 1417;
         byte[] bytesInt = intToByteArray(int2);
         System.out.println("bytesInt=" + bytesInt);//bytesInt=[B@de6ced
-        // 测试 byte 数组转 int
+        // 测试byte数组转int
         int int3 = byteArrayToInt(bytesInt);
         System.out.println("int3=" + int3);//int3=1417
 
