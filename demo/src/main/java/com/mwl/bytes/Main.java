@@ -18,7 +18,7 @@ public class Main {
         int int1 = byteToInt(byte0);
         System.out.println("int1=" + int1);//int1=234
 
-        // 测试 int 转 byte 数组
+        // 测试int转byte数组
         int int2 = 1417;
         byte[] bytesInt = intToByteArray(int2);
         System.out.println("bytesInt=" + bytesInt);//bytesInt=[B@de6ced
