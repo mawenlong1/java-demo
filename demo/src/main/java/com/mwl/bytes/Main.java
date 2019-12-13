@@ -14,7 +14,7 @@ public class Main {
         int int0 = 234;
         byte byte0 = intToByte(int0);
         System.out.println("byte0=" + byte0);//byte0=-22
-        // 测试 byte 转 int
+        // 测试byte转int
         int int1 = byteToInt(byte0);
         System.out.println("int1=" + int1);//int1=234
 
