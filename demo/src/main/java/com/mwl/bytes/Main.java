@@ -13,10 +13,10 @@ public class Main {
         // 测试int转byte
         int int0 = 234;
         byte byte0 = intToByte(int0);
-        System.out.println("byte0=" + byte0);//byte0=-22
+        System.out.println("byte0=" + byte0);// byte0=-22
         // 测试byte转int
         int int1 = byteToInt(byte0);
-        System.out.println("int1=" + int1);//int1=234
+        System.out.println("int1=" + int1);// int1=234
 
         // 测试int转byte数组
         int int2 = 1417;
