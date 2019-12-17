@@ -26,7 +26,6 @@ public class Main {
         int int3 = byteArrayToInt(bytesInt);
         System.out.println("int3=" + int3);//int3=1417
 
-
         // 测试long转byte数组
         long long1 = 2223;
         byte[] bytesLong = longToBytes(long1);
