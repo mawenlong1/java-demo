@@ -35,7 +35,6 @@ public class Main {
         System.out.println("long2=" + long2);//long2=2223
     }
 
-
     // byte与int的相互转换
     public static byte intToByte(int x) {
         return (byte) x;
