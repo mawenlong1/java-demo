@@ -70,7 +70,7 @@ public class Main {
 
     public static long bytesToLong(byte[] bytes) {
         buffer.put(bytes, 0, bytes.length);
-        buffer.flip(); // need flip
+        buffer.flip();  // need flip
         return buffer.getLong();
     }
 
