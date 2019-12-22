@@ -8,8 +8,7 @@ package com.mwl.designpattern;
  */
 public class InstanceEnumStyle {
 
-    private InstanceEnumStyle() {
-    }
+    private InstanceEnumStyle() {}
 
     public static InstanceEnumStyle getInstance() {
         return Singleton.INSTANCE.getSingle();
