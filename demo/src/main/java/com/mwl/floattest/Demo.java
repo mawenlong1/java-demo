@@ -16,13 +16,13 @@ public class Demo {
             int temp = i & 0x3f;
             sum += temp;
         }
-        System.out.println("位运算时间：" + (System.nanoTime() - start));
+        System.out.println("位运算花费时间：" + (System.nanoTime() - start));
         start = System.nanoTime();
         for (int i = 0; i < NUM; i++) {
             int temp = i % 64;
             sum += temp;
         }
-        System.out.println("取余时间：" + (System.nanoTime() - start));
+        System.out.println("取余花费时间：" + (System.nanoTime() - start));
         System.out.println(sum);
     }
 }
