@@ -30,7 +30,7 @@ public class LogDemo {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("正常判断：打印一些日志:" + this);
         }
-        // 如果不加判断直接打印, 会有额外多余的开销, 就算最终日志并没有打印
+        // 如果不加判断直接打印, 会有额外多余的开销, 就算最终日志并没有打印。
         //执行代码，发现虽然日志没有打印，但toString方法还是执行了，属于多余浪费的开销。
         logger.fine("不进行判断：打印一些日志:" + this);
         logger.fine(() -> "lambda的惰性求值：打印一些日志:" + this);
