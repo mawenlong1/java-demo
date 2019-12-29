@@ -26,7 +26,7 @@ public class LogDemo {
     }
 
     public void test() {
-        // 打印日志前需要先判断日志级别
+        // 打印日志前需要先判断日志级别。
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("正常判断：打印一些日志:" + this);
         }
