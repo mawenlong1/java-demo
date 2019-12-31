@@ -21,7 +21,6 @@ public class LogDemo {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
         }
-
         return "LogDemo";
     }
 
