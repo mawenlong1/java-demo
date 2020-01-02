@@ -16,7 +16,7 @@ public class LogDemo {
 
     @Override
     public String toString() {
-        System.out.println("这个方法执行了, 耗时1秒钟");
+        System.out.println("这个方法执行了, 耗时1秒钟。");
         try {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
