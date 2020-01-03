@@ -40,4 +40,5 @@ public class LogDemo {
         LogDemo demo = new LogDemo();
         demo.test();
     }
+
 }
