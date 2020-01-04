@@ -9,7 +9,7 @@ import java.util.function.IntUnaryOperator;
  */
 public class MethodRefrenceDemo {
     public static void main(String[] args) {
-        // 静态方法的方法引用
+        // 静态方法的方法引用。
         IntUnaryOperator methodRefrence1 = DemoClass::staticMethod;
         System.out.println(methodRefrence1.applyAsInt(111));
 
