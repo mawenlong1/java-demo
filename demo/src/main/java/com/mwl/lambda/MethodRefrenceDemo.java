@@ -15,7 +15,7 @@ public class MethodRefrenceDemo {
 
         DemoClass demo = new DemoClass();
 
-        // 实例方法normalMethod的方法引用
+        // 实例方法normalMethod的方法引用。
         IntUnaryOperator methodRefrence2 = demo::normalMethod;
         System.out.println(methodRefrence2.applyAsInt(111));
 
