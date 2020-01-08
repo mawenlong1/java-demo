@@ -21,7 +21,7 @@ public class MethodRefrenceDemo {
 
         // 对同一个实例方法normalMethod也可以使用静态引用。
         // 代码上normalMethod虽然只有一个参数,但实际上有一个隐含的this函数。
-        // 所以使用的是2个参数bifunction函数接口
+        // 所以使用的是2个参数bifunction函数接口。
         BiFunction<DemoClass, Integer, Integer> methodRefrence3 = DemoClass::normalMethod;
         System.out.println(methodRefrence3.apply(demo, 111));
     }
