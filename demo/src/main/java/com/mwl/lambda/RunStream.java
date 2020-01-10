@@ -22,7 +22,7 @@ public class RunStream {
         Random random = new Random();
         // 随机产生数据
         Stream<Integer> stream = Stream.generate(() -> random.nextInt())
-                                       // 产生500个 ( 无限流需要短路操作. )
+                                       // 产生500个 (无限流需要短路操作.)
                                        .limit(500)
                                        // 第1个无状态操作
                                        .peek(s -> print("peek: " + s))
