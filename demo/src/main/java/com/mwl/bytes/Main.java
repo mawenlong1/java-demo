@@ -45,7 +45,7 @@ public class Main {
         return b & 0xFF;
     }
 
-    // byte数组与int的相互转换
+    // byte数组与int的相互转换。
     public static int byteArrayToInt(byte[] b) {
         return b[3] & 0xFF |
                (b[2] & 0xFF) << 8 |
