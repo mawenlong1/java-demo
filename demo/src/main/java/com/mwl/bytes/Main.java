@@ -41,7 +41,7 @@ public class Main {
     }
 
     public static int byteToInt(byte b) {
-        // Java 总是把byte当做有符处理；可以通过将其和 0xFF 进行二进制与得到它的无符值
+        // Java总是把byte当做有符处理；可以通过将其和 0xFF 进行二进制与得到它的无符值
         return b & 0xFF;
     }
 
