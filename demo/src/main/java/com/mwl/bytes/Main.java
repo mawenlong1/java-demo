@@ -30,7 +30,7 @@ public class Main {
         long long1 = 2223;
         byte[] bytesLong = longToBytes(long1);
         System.out.println("bytes=" + bytesLong);//bytes=[B@c17164
-        // 测试byte数组转long
+        // 测试byte数组转long.
         long long2 = bytesToLong(bytesLong);
         System.out.println("long2=" + long2);//long2=2223
     }
