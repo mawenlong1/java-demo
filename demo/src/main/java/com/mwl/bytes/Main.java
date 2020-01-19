@@ -10,7 +10,7 @@ public class Main {
     private static ByteBuffer buffer = ByteBuffer.allocate(8);
 
     public static void main(String[] args) {
-        // 测试int转byte
+        // 测试int转byte。
         int int0 = 234;
         byte byte0 = intToByte(int0);
         System.out.println("byte0=" + byte0);//byte0=-22
