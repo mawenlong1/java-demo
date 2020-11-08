@@ -13,7 +13,9 @@ public class EggDecorator extends AbstactDecoratorBattercake {
     protected void doSomething() {
     }
 
-
+    public String test() {
+        return "1111";
+    }
 
     @Override
     protected String getDesc() {

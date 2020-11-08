@@ -21,6 +21,11 @@
       <artifactId>spring-webmvc</artifactId>
       <version>4.3.6.RELEASE</version>
     </dependency>
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis</artifactId>
+      <version>3.4.6</version>
+    </dependency>
   </dependencies>
 
   <build>
