@@ -30,6 +30,9 @@ public class Main {
         int[] nums1 = { 3, 3, 2, 1, 2, 44, 22, 1, 44, 22, 777, 767 };
         System.out.println("==============");
         System.out.println(fun1(nums1)[0] + "     " + fun1(nums1)[1]);
+        Thread t1 = new Thread();
+        t1.start();
+//       t1.start();
     }
 
     //一个数组只有一个出现过一次，求这个数字
